@@ -6,88 +6,168 @@ using System.Text;
 
 namespace WWebJS.NET;
 
-public enum WorkerStatus{
+public enum WorkerStatus
+{
     Connected,
     Error,
     Connecting
 }
-public class WWebJSWorker:IDisposable
+public class WWebJSWorker : IDisposable
 {
-    static string GetEnvSpecificDefaultServerExecutablePath(){
-        string folder = "x86";
-        if(Environment.Is64BitProcess) folder = "x64";
-        return @$"{folder}\wwebjs-dotnet-server.exe";
-    }
-    public static string ServerExecutablePath {get;set;} = GetEnvSpecificDefaultServerExecutablePath();
+    static WWebJSWorker()
+    {
+        //workaround grpc-js-namedppipes not supporting transmission mode Message:
+        //we force the dotnet package to use Byte
+        //todo: fix this
+        try
+        {
+            var t = typeof(GrpcDotNetNamedPipes.NamedPipeServer).Assembly.GetType("GrpcDotNetNamedPipes.Internal.PlatformConfig");
+            var pi1 = t!.GetField("<TransmissionMode>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            pi1!.SetValue(null, System.IO.Pipes.PipeTransmissionMode.Byte);
+            var pi2 = t.GetField("<SizePrefix>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            pi2!.SetValue(null, true);
+        }
+        catch (Exception err)
+        {
+            throw new Exception("WWebJS.NET: failed to access private fields with reflection, this error indicates internal changes in GrpcDotNetNamedPipes that breaks a temporary workaround", err);
+        }
 
-    private WWebJsService.WWebJsService.WWebJsServiceClient _Client; 
-    public WWebJsService.WWebJsService.WWebJsServiceClient Client 
+    }
+
+    public Action<string> Log { get; set; } = DefaultLog;
+
+    private static void DefaultLog(string str)
+    {
+        Console.WriteLine(str);
+    }
+
+    public event DataReceivedEventHandler ProcessOutputDataReceived;
+    public event DataReceivedEventHandler ProcessErrorDataReceived;
+
+    private WWebJsService.WWebJsService.WWebJsServiceClient _Client;
+    public WWebJsService.WWebJsService.WWebJsServiceClient Client
     {
 
-        get{
-            if(Status!=WorkerStatus.Connected) throw new InvalidOperationException($"Cannot use the worker instance, status='{Status}'");
+        get
+        {
+            if (Status != WorkerStatus.Connected) throw new InvalidOperationException($"Cannot use the worker instance, status='{Status}'");
             return _Client;
         }
-        private set {_Client = value;}
+        private set { _Client = value; }
     }
-    public WWebJSWorker()
+    public WWebJSWorker(WWebJSWorkerStartInfo workerStartInfo)
     {
-        
+
         NamedPipeName = Guid.NewGuid().ToString();
-        
-        
+
+        this.WorkerStartInfo = workerStartInfo;
+
     }
 
-    public async Task Start(){
+    public async Task Start()
+    {
 
         try
         {
-            if(!File.Exists(ServerExecutablePath)) throw new Exception($"executable not found: '{ServerExecutablePath}'");
+            bool isPackagedMode = false;
+            try
+            {
+                this.WorkerStartInfo.ValidateCanStartWithPackagedExecutable();
+                isPackagedMode = true;
+            }
+            catch (System.Exception)
+            {
+                this.WorkerStartInfo.ValidateCanStartWithPackagedExecutable();
+            }
+            if (isPackagedMode)
+            {
+                if (!File.Exists(WorkerStartInfo.PackagedExecutablePath)) throw new Exception($"packaged executable not found: '{WorkerStartInfo.PackagedExecutablePath}'");
 
-            Status = WorkerStatus.Connecting;
-            var processStarted = await StartWorkerWithArgs(new string[]{NamedPipeName});
-        
-            if(!processStarted) throw new Exception("cannot start process");
-            
+                var workerArgs = new string[] { NamedPipeName };
+                Log($"attempting to run '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
+
+                Status = WorkerStatus.Connecting;
+                var processStarted = await StartWorkerWithArgs(workerArgs);
+                if (!processStarted) throw new Exception("cannot start process");
+
+            }
+            else{
+                //running node.exe 
+                if (!File.Exists(WorkerStartInfo.NodeExecutablePath)) throw new Exception($"node.exe not found: '{WorkerStartInfo.NodeExecutablePath}'");
+                if(!Path.GetFileName(WorkerStartInfo.NodeExecutablePath).Equals("node.exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"invalid node path: '{WorkerStartInfo.NodeExecutablePath}'");
+                }
+                if(!Directory.Exists(WorkerStartInfo.NodeAppDirectory))
+                {
+                    throw new Exception($"wds app directory not found or is not valid at : '{WorkerStartInfo.NodeAppDirectory}'");
+                }
+                if(!Directory.Exists(Path.Combine(WorkerStartInfo.NodeAppDirectory,"node_modules")))
+                {
+                    throw new Exception($"wds app directory not found or is not valid at : '{WorkerStartInfo.NodeAppDirectory}'");
+                }
+                if(!File.Exists(Path.Combine(WorkerStartInfo.NodeAppDirectory,"index.js")))
+                {
+                    throw new Exception($"index.js not found in app directory : '{WorkerStartInfo.NodeAppDirectory}'");
+                }
+
+                var workerArgs = new string[] { NamedPipeName };
+                Log($"attempting to run '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
+
+                Status = WorkerStatus.Connecting;
+                var processStarted = await StartWorkerWithArgs(workerArgs);
+                if (!processStarted) throw new Exception("cannot start process");
+
+            }
+
+
 
             var channel = new GrpcDotNetNamedPipes.NamedPipeChannel(".", NamedPipeName);
             Client = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
-            if(await TryGetPingResponse()) Status = WorkerStatus.Connected;
+            Log($"attempting to get ping resp...");
+            if (await TryGetPingResponse()) Status = WorkerStatus.Connected;
             else throw new Exception("cannot start process, ping err");
         }
         catch (System.Exception err)
         {
-            
+
+            Log(err.ToString());
             SetError(err);
             throw;
         }
-        
+
     }
 
-    async Task<bool> TryGetPingResponse(){
+    async Task<bool> TryGetPingResponse()
+    {
         return await Task.FromResult(true);
     }
-    void SetError(Exception err){
-        this.Status =  WorkerStatus.Error;
-        this.Error=err;
+    void SetError(Exception err)
+    {
+        this.Status = WorkerStatus.Error;
+        this.Error = err;
     }
-    public Exception Error{get;private set;}
-    string NamedPipeName {get;set;}
+    public Exception Error { get; private set; }
+    string NamedPipeName { get; set; }
+    public WWebJSWorkerStartInfo WorkerStartInfo { get; }
+
     Process process;
 
     //never returns false, throws on errors
     private async Task<bool> StartWorkerWithArgs(string[] args)
-{
-    var exePath = ServerExecutablePath;
-    var tcs = new TaskCompletionSource<bool>();
-    StringBuilder startupLogs = new StringBuilder();
-
-
-    try
     {
-        process = new Process
+        var exePath = ServerExecutablePath;
+        var tcs = new TaskCompletionSource<bool>();
+        StringBuilder startupLogs = new StringBuilder();
+
+
+
+
+        try
         {
-            StartInfo =
+            process = new Process
+            {
+                StartInfo =
             {
                 FileName = exePath,
                 Arguments = string.Join(" ", args),
@@ -96,71 +176,85 @@ public class WWebJSWorker:IDisposable
                 RedirectStandardError = true,
                 CreateNoWindow = false
             },
-            EnableRaisingEvents = true
-        };
+                EnableRaisingEvents = true
+            };
 
-        DataReceivedEventHandler? onData = null;;
-        DataReceivedEventHandler? onError = null;
-        onData = (s,e)=>{
-            if (e.Data != null && e.Data.Contains("Server listening"))
+            DataReceivedEventHandler? onData = null; ;
+            DataReceivedEventHandler? onError = null;
+            onData = (s, e) =>
             {
-                startupLogs.AppendLine(e.Data);
-                process.OutputDataReceived-=onData;
-                process.ErrorDataReceived-=onError;
-                tcs.TrySetResult(true);
-            }
-        };
-        onError = (s,e)=>{
-            if (e.Data != null)
+                if (e.Data != null && e.Data.Contains("Server listening"))
+                {
+                    startupLogs.AppendLine(e.Data);
+                    process.OutputDataReceived -= onData;
+                    process.ErrorDataReceived -= onError;
+                    tcs.TrySetResult(true);
+                }
+            };
+            onError = (s, e) =>
             {
-                startupLogs.AppendLine(e.Data);
-                Debug.WriteLine($"Worker Error: {e.Data}");
-            }
-        };
-        process.OutputDataReceived += onData;
-        process.ErrorDataReceived += onError;
-        process.Exited += (sender, e) =>
+                if (e.Data != null)
+                {
+                    startupLogs.AppendLine(e.Data);
+                    Log($"Worker Error: {e.Data}");
+                }
+            };
+            process.OutputDataReceived += onData;
+            process.ErrorDataReceived += onError;
+            process.OutputDataReceived += (s, e) =>
+            {
+                try { ProcessOutputDataReceived?.Invoke(this, e); } catch (System.Exception) { }
+            };
+            process.ErrorDataReceived += (s, e) =>
+            {
+                try { ProcessErrorDataReceived?.Invoke(this, e); } catch (System.Exception) { }
+            };
+
+            process.Exited += (sender, e) =>
+            {
+                if (!tcs.Task.IsCompleted)
+                {
+                    process.OutputDataReceived -= onData;
+                    process.ErrorDataReceived -= onError;
+                    tcs.TrySetException(new Exception($"process exited before starting server, log: {startupLogs.ToString()}"));
+                }
+            };
+
+            process.Start();
+
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            await tcs.Task;
+
+            return tcs.Task.Result;
+        }
+        catch (Exception err)
         {
-            if (!tcs.Task.IsCompleted)
-            {
-                process.OutputDataReceived-=onData;
-                process.ErrorDataReceived-=onError;
-                tcs.TrySetException(new Exception($"process exited before starting server, log: {startupLogs.ToString()}"));
-            }
-        };
-
-        process.Start();
-
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-
-        await tcs.Task;
-
-        return tcs.Task.Result;
+            throw new Exception("cannot start process", err);
+        }
     }
-    catch (Exception err)
+
+
+    public void Dispose()
     {
-        throw new Exception("cannot start process",err);
-    }
-}
-
-
-    public void Dispose(){
 
         //Client.Dispose();
-        if(process!=null)
-        process.Dispose();
+        if (process != null)
+            process.Dispose();
 
 
     }
-    public void Close(){
+    public void Close()
+    {
         Dispose();
     }
-    public WorkerStatus Status {get;set;}
-    public static object hello(){
-   
-      return "v1";
-   }
+    public WorkerStatus Status { get; set; }
+    public static object hello()
+    {
+
+        return "v1";
+    }
 }
 
 

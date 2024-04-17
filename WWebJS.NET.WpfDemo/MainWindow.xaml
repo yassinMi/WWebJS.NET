@@ -6,11 +6,17 @@
         xmlns:local="clr-namespace:WWebJS.NET.WpfDemo"
         mc:Ignorable="d"
         Title="MainWindow" Height="281" Width="420">
-    <DockPanel>
-        
-        <StatusBar Padding="4 0" DockPanel.Dock="Bottom">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="80"/>
+            <RowDefinition Height="auto"/>
+        </Grid.RowDefinitions>
+        <StatusBar Padding="4 0" Grid.Row="3">
             <Label x:Name="labelStatus" Content="ready"/>
         </StatusBar>
+        <GridSplitter Grid.Row="1" HorizontalAlignment="Stretch" Height="5" ResizeBehavior="PreviousAndNext"/>
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="2*" MinWidth="100"/>
@@ -74,5 +80,14 @@
         </Grid>
 
 
-    </DockPanel>
+        <Grid Grid.Row="2" x:Name="logs">
+            <RichTextBox  Background="#1c1c1c"  Foreground="#fafafa"  x:Name="logsRtb" FontFamily="Consolas" CaretBrush="#FFFAFAFA">
+                <RichTextBox.Document>
+                    <FlowDocument>
+                        
+                    </FlowDocument>
+                </RichTextBox.Document>
+            </RichTextBox>
+        </Grid>
+    </Grid>
 </Window>
