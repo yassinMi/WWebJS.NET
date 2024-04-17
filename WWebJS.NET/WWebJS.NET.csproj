@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net6.0;net462</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>10.0</LangVersion>
+    <Version>0.1.13</Version>
+    <PackageDescription>A simple .NET wrapper for the whatsapp-web.js library. This runs a packaged Node.js server and doesn't require a Node.js installation</PackageDescription>
+    <AssemblyVersion>0.1.13.0</AssemblyVersion>
+    <Authors>yassinMi</Authors>
+    <Company></Company>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" Version="2.62.0" />
+    <PackageReference Include="GrpcDotNetNamedPipes" Version="3.0.0" />
+    <PackageReference Include="System.Net.Http" Version="4.3.4" />
+    <PackageReference Include="Grpc.Tools" Version="2.59.0" PrivateAssets="All" />
+    
+  </ItemGroup> 
+  <ItemGroup>
+    <Protobuf Include="Protos/*.proto" />
+  </ItemGroup>
+  <ItemGroup>
+      <None Include="runtimes/win-x64/native/*" Pack="true" PackagePath="runtimes/win-x46/native/" />
+      <None Include="runtimes/win-x86/native/*" Pack="true" PackagePath="runtimes/win-x86/native/" />
+      <None Include="BuildTargets/net462/*" Pack="true" PackagePath="build/462/" />
+  </ItemGroup>
+</Project>

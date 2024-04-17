@@ -9,7 +9,7 @@
     <DockPanel>
         
         <StatusBar Padding="4 0" DockPanel.Dock="Bottom">
-            <Label Content="ready"/>
+            <Label x:Name="labelStatus" Content="ready"/>
         </StatusBar>
         <Grid>
             <Grid.ColumnDefinitions>

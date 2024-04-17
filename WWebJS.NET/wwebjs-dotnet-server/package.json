@@ -1,0 +1,34 @@
+{
+  "name": "wwebjs-dotnet-server",
+  "version": "1.0.0",
+  "description": "The js backend of WWebJS.NET which is a .NET wrapper for WWebJs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "generate:proto": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./generated --grpc_out=grpc_js:./generated -I ../Protos ../Protos/*.proto",
+    "generate:package": "pkg .  -o \".\\bin\\wwebjs-dotnet-server.exe\"",
+    "build": "npm run generate:proto && npm run generate:package"
+  },
+  "keywords": [
+    "WWebJs",
+    ".NET",
+    "dotnet",
+    "NetFramework"
+  ],
+  "type": "commonjs",
+  "author": "YassinMi",
+  "license": "MIT",
+  "dependencies": {
+    "google-protobuf": "^3.21.2",
+    "grpc": "^1.24.11",
+    "grpc-js-namedpipes": "^0.1.1",
+    "whatsapp-web.js": "^1.23.0"
+  },
+  "bin": "index.js",
+  "pkg": {
+    "targets": [
+      "node14-win-x64"
+    ],
+    "assets": ["./node_modules/grpc/src/node/extension_binary/node-v83-win32-x64-unknown/grpc_node.node"]
+  }
+}

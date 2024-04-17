@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package WWebJsService;
+
+service WWebJsService {
+    rpc GetMessages(GetMessagesRequest) returns(GetMessagesResponse){}
+    rpc GetLastMessage(GetLastMessageRequest) returns(GetLastMessageResponse){}
+}
+message GetMessagesRequest{
+    Contact contact =1;
+}
+message GetMessagesResponse{
+    repeated Message messages =1;
+}
+
+message GetLastMessageRequest {
+    Contact contact =1;
+}
+message GetLastMessageResponse{
+     Message message =1;
+}
+
+message Message{
+    string body =1;
+}
+
+message Contact{
+    string phone =1;
+
+}
+

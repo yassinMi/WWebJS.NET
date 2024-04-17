@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using WWebJsService;
 
 namespace WWebJS.NET.WpfDemo
 {
@@ -28,12 +29,20 @@ namespace WWebJS.NET.WpfDemo
 
                 try
                 {
-                    
-                    textBlock1.Text = "getting result....";
+                    labelStatus.Content = "getting result...";
+                    using (var worker = new WWebJSWorker())
+                    {
+                        await worker.Start();
+                        var contact = new Contact() { Phone = "yass phone" };
+                        var req = new GetLastMessageRequest() { Contact = contact};
+
+                        var res = await worker.Client.GetLastMessageAsync(req);
+                        labelStatus.Content = res.Message.Body;
+                    }
                 }
                 catch (Exception err)
                 {
-                    textBlock1.Text =err.ToString();
+                    labelStatus.Content =err.ToString();
                       
                 }
                 
