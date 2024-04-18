@@ -81,7 +81,7 @@
 
 
         <Grid Grid.Row="2" x:Name="logs">
-            <RichTextBox  Background="#1c1c1c"  Foreground="#fafafa"  x:Name="logsRtb" FontFamily="Consolas" CaretBrush="#FFFAFAFA">
+            <RichTextBox  Foreground="#fafafa" ScrollViewer.VerticalScrollBarVisibility="Visible"  x:Name="logsRtb" FontFamily="Consolas" CaretBrush="#FFFAFAFA" Background="#FF252526">
                 <RichTextBox.Document>
                     <FlowDocument>
                         

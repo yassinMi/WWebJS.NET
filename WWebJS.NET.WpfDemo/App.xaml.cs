@@ -17,6 +17,7 @@ namespace WWebJS.NET.WpfDemo
         protected override void OnStartup(StartupEventArgs e)
         {
             this.DispatcherUnhandledException += h_DispatcherUnhandledException;
+            
             base.OnStartup(e);
         }
 

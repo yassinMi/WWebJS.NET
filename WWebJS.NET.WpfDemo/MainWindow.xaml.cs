@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
@@ -27,7 +28,7 @@ namespace WWebJS.NET.WpfDemo
         {
             InitializeComponent();
 
-            LogInfo("demo app  started");
+            LogInfo("demo app started");
 
             button1.Click += async (s, e) =>
             {
@@ -39,13 +40,13 @@ namespace WWebJS.NET.WpfDemo
                     {
                         //hello test using grpc directly
                         LogInfo("running test with existing worker instance (TEST pipe name]");
-                        labelStatus.Content = "getting result ...";
+                        LogInfo($"getting result");
                         var channel = new GrpcDotNetNamedPipes.NamedPipeChannel(".", "TEST");
                         var Client = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
                         var contact = new Contact() { Phone = "yass phone" };
                         var req = new GetLastMessageRequest() { Contact = contact };
                         var res = await Client.GetLastMessageAsync(req);
-                        labelStatus.Content = res.Message.Body;
+                        LogInfo($"recieved response: {res.Message.Body}");
                     }
                     else
                     {
@@ -55,8 +56,9 @@ namespace WWebJS.NET.WpfDemo
                         WWebJSWorkerStartInfo wsi = new WWebJSWorkerStartInfo(("x64/node.exe"), "wwebjs-dotnet-server/");
 
                         //WWebJSWorker.ServerExecutablePath = @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\bin\wwebjs-dotnet-server.exe";
-                        using (var worker = new WWebJSWorker(wsi))
+                        using (var worker =currentWorker = new WWebJSWorker(wsi))
                         {
+                            worker.StatusChanged += onWorkerStatusChanged;
                             worker.ProcessOutputDataReceived += (ss, ee) =>
                             {
                                 LogInfo(ee.Data);
@@ -76,36 +78,59 @@ namespace WWebJS.NET.WpfDemo
                             var req = new GetLastMessageRequest() { Contact = contact };
 
                             var res = await worker.Client.GetLastMessageAsync(req);
-                            labelStatus.Content = res.Message.Body;
+                            LogInfo($"recieved response: {res.Message.Body}" );
+                            await Task.Delay(1000);
                         }
+                        LogInfo($"end scope:");
+
                     }
 
-                    
+
                 }
                 catch (Exception err)
                 {
-                    labelStatus.Content = err.ToString();
+                    LogError( err.ToString());
 
                 }
 
 
             };
         }
+        WWebJSWorker currentWorker;
+        private void onWorkerStatusChanged(object sender, EventArgs e)
+        {
+            onStatus($"Worker Status: {currentWorker.Status}");
+        }
+
         private void LogInfo(string str)
         {
-            App.Current.Dispatcher.Invoke(() =>
+            Debug.WriteLine(str);
+            App.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
+                bool shouldScroll = logsRtb.VerticalOffset >= (logsRtb.ExtentHeight- logsRtb.ViewportHeight);
+
+                //MessageBox.Show($"{logsRtb.VerticalOffset} > = {logsRtb.ViewportHeight} {logsRtb.ExtentHeight} {logsRtb.Document.PageHeight} {logsRtb.ActualHeight}");
                 logsRtb.Document.Blocks.Add(new Paragraph(new Run(str) { }));
-            });
+                if (shouldScroll) logsRtb.ScrollToEnd();
+            }));
+
+        }
+        void onStatus(string status)
+        {
+            App.Current.Dispatcher.BeginInvoke(new Action(() => { labelStatus.Content = status; }));
 
         }
         private void LogError(string str)
         {
-            App.Current.Dispatcher.Invoke(() =>
+            Debug.WriteLine(str);
+
+            App.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
+                bool shouldScroll = logsRtb.VerticalOffset >= (logsRtb.ExtentHeight - logsRtb.ViewportHeight);
 
                 logsRtb.Document.Blocks.Add(new Paragraph(new Run(str) { Foreground = Brushes.Red }));
-            });
+                if (shouldScroll) logsRtb.ScrollToEnd();
+            }));
 
 
         }

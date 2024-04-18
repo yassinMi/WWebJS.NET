@@ -26,11 +26,12 @@
       <Visible>False</Visible>
     </Content>
   </ItemGroup>
-  <ItemGroup Condition=" Exists('packages.config') Or Exists('packages.$(MSBuildProjectName).config')">
+  <!--disabled in dev builds only-->
+  <!--ItemGroup Condition=" Exists('packages.config') Or Exists('packages.$(MSBuildProjectName).config')">
     <Content Include="$(MSBuildThisFileDirectory)..\..\dependencies\**\*.*">
       <Link>%(RecursiveDir)%(Filename)%(Extension)</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </Content>
-  </ItemGroup>
+  </ItemGroup-->
 </Project>

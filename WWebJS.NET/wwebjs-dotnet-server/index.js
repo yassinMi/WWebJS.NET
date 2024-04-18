@@ -29,3 +29,10 @@ l.start((err)=>{
         console.log(err)
     }
 })
+
+process.stdin.on("data",data=>{
+    if(data.toString().trim()=="q"){
+        //todo: close server gracefully
+        process.exit(0);
+    }
+})
