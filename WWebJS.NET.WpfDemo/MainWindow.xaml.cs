@@ -51,9 +51,11 @@ namespace WWebJS.NET.WpfDemo
                     {
                         //hello test
 
-                        LogInfo("starting packaged worker ...");
-                        WWebJSWorker.ServerExecutablePath = @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\bin\wwebjs-dotnet-server.exe";
-                        using (var worker = new WWebJSWorker())
+                        LogInfo("starting packaged/node worker ...");
+                        WWebJSWorkerStartInfo wsi = new WWebJSWorkerStartInfo(("x64/node.exe"), "wwebjs-dotnet-server/");
+
+                        //WWebJSWorker.ServerExecutablePath = @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\bin\wwebjs-dotnet-server.exe";
+                        using (var worker = new WWebJSWorker(wsi))
                         {
                             worker.ProcessOutputDataReceived += (ss, ee) =>
                             {

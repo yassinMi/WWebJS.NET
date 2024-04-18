@@ -77,7 +77,7 @@ public class WWebJSWorker : IDisposable
             }
             catch (System.Exception)
             {
-                this.WorkerStartInfo.ValidateCanStartWithPackagedExecutable();
+                this.WorkerStartInfo.ValidateCanStartWithNode();
             }
             if (isPackagedMode)
             {
@@ -87,7 +87,7 @@ public class WWebJSWorker : IDisposable
                 Log($"attempting to run '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
 
                 Status = WorkerStatus.Connecting;
-                var processStarted = await StartWorkerWithArgs(workerArgs);
+                var processStarted = await StartWorkerWithArgs(WorkerStartInfo.PackagedExecutablePath,workerArgs);
                 if (!processStarted) throw new Exception("cannot start process");
 
             }
@@ -106,16 +106,18 @@ public class WWebJSWorker : IDisposable
                 {
                     throw new Exception($"wds app directory not found or is not valid at : '{WorkerStartInfo.NodeAppDirectory}'");
                 }
-                if(!File.Exists(Path.Combine(WorkerStartInfo.NodeAppDirectory,"index.js")))
+                var indexJsPath = Path.Combine(WorkerStartInfo.NodeAppDirectory,"index.js");
+                if(!File.Exists(indexJsPath))
                 {
-                    throw new Exception($"index.js not found in app directory : '{WorkerStartInfo.NodeAppDirectory}'");
+                    throw new Exception($"index.js expected in app directory : '{WorkerStartInfo.NodeAppDirectory}'");
                 }
+                //todo: validate package.json version to ensure compatibility
 
-                var workerArgs = new string[] { NamedPipeName };
+                var workerArgs = new string[] {indexJsPath , NamedPipeName };
                 Log($"attempting to run '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
 
                 Status = WorkerStatus.Connecting;
-                var processStarted = await StartWorkerWithArgs(workerArgs);
+                var processStarted = await StartWorkerWithArgs(WorkerStartInfo.NodeExecutablePath, workerArgs);
                 if (!processStarted) throw new Exception("cannot start process");
 
             }
@@ -153,16 +155,15 @@ public class WWebJSWorker : IDisposable
 
     Process process;
 
-    //never returns false, throws on errors
-    private async Task<bool> StartWorkerWithArgs(string[] args)
+    ///<summary>
+    /// runs the specified <paramref name="program"/> (either node or the packaged exe, and passes the <paramref name="args"/>)
+    /// resolves when recieving <see langword="abstract"/> "Server listening" stdout line 
+    ///</summary>
+    private async Task<bool> StartWorkerWithArgs(string program, string[] args)
     {
-        var exePath = ServerExecutablePath;
+        var exePath = program;
         var tcs = new TaskCompletionSource<bool>();
         StringBuilder startupLogs = new StringBuilder();
-
-
-
-
         try
         {
             process = new Process

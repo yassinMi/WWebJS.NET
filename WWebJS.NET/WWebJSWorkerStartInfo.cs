@@ -1,14 +1,14 @@
 public struct WWebJSWorkerStartInfo
 {
 
-    static string GetEnvSpecificDefaultServerExecutablePath()
+    static string GetEnvSpecificRuntimeBinaryPath(string fileNameAndExtension)
     {
         string folder = "x86";
         if (Environment.Is64BitProcess) folder = "x64";
-        return @$"{folder}\wwebjs-dotnet-server.exe";
+        return @$"{folder}\{fileNameAndExtension}";
     }
-    public static WWebJSWorkerStartInfo LocalEnvSpecificPackaged = new WWebJSWorkerStartInfo(GetEnvSpecificDefaultServerExecutablePath());
-    public static WWebJSWorkerStartInfo LocalEnvSpecificNode = new WWebJSWorkerStartInfo(GetEnvSpecificDefaultServerExecutablePath());
+    public static WWebJSWorkerStartInfo LocalEnvSpecificPackaged = new WWebJSWorkerStartInfo(GetEnvSpecificRuntimeBinaryPath("wwebjs-dotnet-server.exe"));
+    public static WWebJSWorkerStartInfo LocalEnvSpecificNode = new WWebJSWorkerStartInfo(GetEnvSpecificRuntimeBinaryPath("node.exe"),"wwebjs-dotnet-server/");
     
     public WWebJSWorkerStartInfo(string packagedExe)
     {
@@ -36,7 +36,7 @@ public struct WWebJSWorkerStartInfo
     ///</summary>
     public string? NodeAppDirectory { get; set; }
 
-    public void ValidateCanStartWithNode()
+    public void ValidateCanStartWithPackagedExecutable ()
     {
         if (!string.IsNullOrWhiteSpace(PackagedExecutablePath))
         {
@@ -47,7 +47,7 @@ public struct WWebJSWorkerStartInfo
             throw new Exception("NodeAppDirectory must be provided");
         }
     }
-    public void ValidateCanStartWithPackagedExecutable()
+    public void ValidateCanStartWithNode()
     {
         if (!string.IsNullOrWhiteSpace(PackagedExecutablePath))
         {
