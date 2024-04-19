@@ -1,0 +1,382 @@
+syntax = "proto3";
+
+package WWebJsService;
+import "Contact.proto";
+
+
+// Represents a message
+message Message {
+    // ACK status for the message
+    MessageAck ack = 1;
+    // If the message was sent to a group, this field will contain the user that sent the message.
+    string author = 2;
+    // String that represents from which device type the message was sent
+    string device_type = 3;
+    // Message content
+    string body = 4;
+    // Indicates if the message was a broadcast
+    bool broadcast = 5;
+    // Indicates if the message was a status update
+    bool is_status = 6;
+    // Indicates if the message is a Gif
+    bool is_gif = 7;
+    // Indicates if the message will disappear after it expires
+    bool is_ephemeral = 8;
+    // ID for the Chat that this message was sent to, except if the message was sent by the current user
+    string from = 9;
+    // Indicates if the message was sent by the current user
+    bool from_me = 10;
+    // Indicates if the message has media available for download
+    bool has_media = 11;
+    // Indicates if the message was sent as a reply to another message
+    bool has_quoted_msg = 12;
+    // Indicates whether there are reactions to the message
+    bool has_reaction = 13;
+    // Indicates the duration of the message in seconds
+    string duration = 14;
+    // ID that represents the message
+    MessageId id = 15;
+    // Indicates if the message was forwarded
+    bool is_forwarded = 16;
+    // Indicates how many times the message was forwarded. The maximum value is 127.
+    int32 forwarding_score = 17;
+    // Indicates if the message was starred
+    bool is_starred = 18;
+    // Location information contained in the message, if the message is type "location"
+    Location location = 19;
+    // List of vCards contained in the message
+    repeated string v_cards = 20;
+    // Invite v4 info
+    InviteV4Data invite_v4 = 21;
+    // MediaKey that represents the sticker 'ID'
+    string media_key = 22;
+    // Indicates the mentions in the message body.
+    repeated string mentioned_ids = 23;
+    // Unix timestamp for when the message was created
+    int64 timestamp = 24;
+    // ID for who this message is for.
+    string to = 25;
+    // Message type
+    MessageTypes type = 26;
+    // Links included in the message.
+    repeated Link links = 27;
+    // Order ID
+    string order_id = 28;
+    // title
+    string title = 29;
+    // description
+    string description = 30;
+    // Business Owner JID
+    string business_owner_jid = 31;
+    // Product JID
+    string product_id = 32;
+    // Last edit time
+    int64 latest_edit_sender_timestamp_ms = 33;
+    // Last edit message author
+    MessageId latest_edit_msg_key = 34;
+    // Message buttons
+    DynamicReplyButtons dynamic_reply_buttons = 35;
+    // Selected button ID
+    string selected_button_id = 36;
+    // Selected list row ID
+    string selected_row_id = 37;
+    // Returns message in a raw format
+    RawData raw_data = 38;
+    // Poll name
+    string poll_name = 39;
+    // Available poll voting options
+    repeated string poll_options = 40;
+    // False for a single choice poll, true for a multiple choice poll
+    bool allow_multiple_answers = 41;
+}
+
+// ID that represents a message
+message MessageId {
+    // Indicates if the message is from the current user
+    bool from_me = 1;
+    // Remote ID
+    string remote = 2;
+    // Unique ID
+    string id = 3;
+    // Serialized ID
+    string serialized = 4;
+}
+
+// Represents a link in a message
+message Link {
+    // Link URL
+    string link = 1;
+    // Indicates if the link is suspicious
+    bool is_suspicious = 2;
+}
+
+
+// Invite v4 data
+message InviteV4Data {
+    // Define InviteV4Data message fields here
+}
+
+// Represents dynamic reply buttons
+message DynamicReplyButtons {
+    // Define DynamicReplyButtons message fields here
+}
+
+// Represents raw data of a message
+message RawData {
+    // Define RawData message fields here
+}
+
+
+// Enum for message types
+enum MessageTypes {
+    // Text message
+    TEXT = 0;
+    // Audio message
+    AUDIO = 1;
+    // Voice message
+    VOICE = 2;
+    // Image message
+    IMAGE = 3;
+    // Video message
+    VIDEO = 4;
+    // Document message
+    DOCUMENT = 5;
+    // Sticker message
+    STICKER = 6;
+    // Location message
+    LOCATION = 7;
+    // Contact card message
+    CONTACT_CARD = 8;
+    // Multi-contact card message
+    CONTACT_CARD_MULTI = 9;
+    // Revoked message
+    REVOKED = 10;
+    // Order message
+    ORDER = 11;
+    // Product message
+    PRODUCT = 12;
+    // Payment message
+    PAYMENT = 13;
+    // Unknown message type
+    UNKNOWN = 14;
+    // Group invite message
+    GROUP_INVITE = 15;
+    // List message
+    LIST = 16;
+    // List response message
+    LIST_RESPONSE = 17;
+    // Buttons response message
+    BUTTONS_RESPONSE = 18;
+    // Broadcast notification message
+    BROADCAST_NOTIFICATION = 19;
+    // Call log message
+    CALL_LOG = 20;
+    // Ciphertext message
+    CIPHERTEXT = 21;
+    // Debug message
+    DEBUG = 22;
+    // End-to-end notification message
+    E2E_NOTIFICATION = 23;
+    // GP2 message
+    GP2 = 24;
+    // Group notification message
+    GROUP_NOTIFICATION = 25;
+    // HSM message
+    HSM = 26;
+    // Interactive message
+    INTERACTIVE = 27;
+    // Native flow message
+    NATIVE_FLOW = 28;
+    // Notification message
+    NOTIFICATION = 29;
+    // Notification template message
+    NOTIFICATION_TEMPLATE = 30;
+    // Oversized message
+    OVERSIZED = 31;
+    // Protocol message
+    PROTOCOL = 32;
+    // Reaction message
+    REACTION = 33;
+    // Template button reply message
+    TEMPLATE_BUTTON_REPLY = 34;
+    // Poll creation message
+    POLL_CREATION = 35;
+}
+
+message MessageContent {
+    oneof content {
+        string text = 1;
+        MessageMedia media = 2;
+        Location location = 3;
+        Poll poll = 4;
+        Contact contact = 5;
+        //repeated Contact multiple_contacts = 6;//todo
+        List list = 7;
+        Buttons buttons = 8;
+    }
+}
+
+// Location information
+message Location {
+    // Latitude
+    string latitude = 1;
+    // Longitude
+    string longitude = 2;
+    // Location send options
+    LocationSendOptions options = 3;
+}
+// Options for sending a location
+message LocationSendOptions {
+    // Location name
+    string name = 1;
+    // Location address
+    string address = 2;
+    // URL address to be shown within a location message
+    string url = 3;
+}
+// Represents a Poll on WhatsApp
+message Poll {
+    // Poll name
+    string poll_name = 1;
+    // Poll options
+    repeated PollOption poll_options = 2;
+    // Poll options
+    PollSendOptions options = 3;
+}
+
+// Represents a Poll option
+message PollOption {
+    // Option name
+    string name = 1;
+    // Local ID
+    int32 local_id = 2;
+}
+
+// Poll send options
+message PollSendOptions {
+    // False for a single choice poll, true for a multiple choice poll (false by default)
+    bool allow_multiple_answers = 1;
+    // The custom message secret, can be used as a poll ID
+    // It has to be a unique vector with a length of 32
+    repeated uint32 message_secret = 2;
+}
+
+// Represents a Label on WhatsApp
+message Label {
+    // Label name
+    string name = 1;
+    // Label ID
+    string id = 2;
+    // Color assigned to the label
+    string hex_color = 3;
+}
+message MessageSendOptions {
+    bool link_preview = 1;
+    bool send_audio_as_voice = 2;
+    bool send_video_as_gif = 3;
+    bool send_media_as_sticker = 4;
+    bool send_media_as_document = 5;
+    bool is_view_once = 6;
+    bool parse_v_cards = 7;
+    string caption = 8;
+    string quoted_message_id = 9;
+    repeated Contact mentions = 10;
+    bool send_seen = 11;
+    MessageMedia media = 12;
+    string extra = 13;
+    string sticker_name = 14;
+    string sticker_author = 15;
+    repeated string sticker_categories = 16;
+}
+message MessageMedia {
+    // MIME type of the attachment
+    string mimetype = 1;
+    // Base64-encoded data of the file
+    string data = 2;
+    // Document file name. Value can be null
+    string filename = 3;
+    // Document file size in bytes. Value can be null
+    int32 filesize = 4;
+}
+
+// Message type Buttons
+message Buttons {
+    // Body of the buttons message, can be either a string or MessageMedia
+    oneof body {
+        string text = 1;
+        MessageMedia media = 2;
+    }
+    // Buttons array
+    repeated Button buttons = 3;
+    // Title
+    string title = 4;
+    // Footer
+    string footer = 5;
+}
+
+// Represents a button//todo: this is expanded from Buttons and is not an existing types in the library
+message Button {
+    // Button ID
+    string button_id = 1;
+    // Button text
+    ButtonText button_text = 2;
+    // Button type
+    int32 type = 3;
+}
+
+// Represents button text//todo:  this is expanded from Buttons and is not an existing types in the library
+message ButtonText {
+    // Display text
+    string display_text = 1;
+}
+
+// Represents a Call on WhatsApp
+message Call {
+    // Call Id
+    string id = 1;
+    // From
+    string from = 2;
+    // Unix timestamp for when the call was created
+    int64 timestamp = 3;
+    // Is video
+    bool is_video = 4;
+    // Is Group
+    bool is_group = 5;
+    // Indicates if the call was sent by the current user
+    bool from_me = 6;
+    // Indicates if the call can be handled in waweb
+    bool can_handle_locally = 7;
+    // Indicates if the call should be handled in waweb
+    bool web_client_should_handle = 8;
+    // Object with participants
+    map<string, string> participants = 9;
+
+    // Note: Protobuf doesn't support methods like "reject()"
+}
+
+// Message type List
+message List {
+    // Body of the list message
+    string body = 1;
+    // Button text
+    string button_text = 2;
+    // Sections array
+    //repeated Section sections = 3;//todo: unknown type
+    // Title
+    string title = 4;
+    // Footer
+    string footer = 5;
+}
+
+
+
+
+// Message ACK
+enum MessageAck {
+    ACK_PENDING = 0;
+    ACK_ERROR = -1;
+    ACK_SERVER = 1;
+    ACK_DEVICE = 2;
+    ACK_READ = 3;
+    ACK_PLAYED = 4;
+}

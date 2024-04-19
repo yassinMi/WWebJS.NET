@@ -5,3 +5,4 @@ bin/
 *.yass.*
 *.yasscmd 
 package-lock.json
+dist/

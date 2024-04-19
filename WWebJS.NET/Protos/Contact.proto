@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package WWebJsService;
+
+
+message Contact {
+    string number = 1;
+    bool is_business = 2;
+    ContactId id = 3;
+    bool is_enterprise = 4;
+    bool is_group = 5;
+    bool is_me = 6;
+    bool is_my_contact = 7;
+    bool is_user = 8;
+    bool is_wa_contact = 9;
+    bool is_blocked = 10;
+    repeated string labels = 11;
+    string name = 12;
+    string pushname = 13;
+    string section_header = 14;
+    string short_name = 15;
+    bool status_mute = 16;
+    string type = 17;
+    string verified_level = 18;
+    string verified_name = 19;
+}
+message ContactId {
+    string server = 1;
+    string user = 2;
+    string serialized = 3;
+}
+

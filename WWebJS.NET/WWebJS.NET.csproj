@@ -5,9 +5,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>10.0</LangVersion>
-    <Version>0.1.42</Version>
+    <Version>0.1.43</Version>
     <PackageDescription>A simple .NET wrapper for the whatsapp-web.js library. This runs a packaged Node.js server and doesn't require a Node.js installation</PackageDescription>
-    <AssemblyVersion>0.1.42.0</AssemblyVersion>
+    <AssemblyVersion>0.1.43.0</AssemblyVersion>
     <Authors>yassinMi</Authors>
     <Company></Company>
   </PropertyGroup>
@@ -20,7 +20,7 @@
     
   </ItemGroup> 
   <ItemGroup>
-    <Protobuf Include="Protos/*.proto" />
+    <Protobuf Include="Protos/*.proto" ProtoRoot="Protos/" />
   </ItemGroup>
   <ItemGroup>
       <None Include="BuildTargets/net462/*" Pack="true" PackagePath="build/462/" />

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WWebJS.NET.WpfDemo"
         mc:Ignorable="d"
-        Title="MainWindow" Height="281" Width="420">
+        Title="MainWindow" Height="380" Width="558">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -35,8 +35,16 @@
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="auto"/>
                     </Grid.RowDefinitions>
-                    <TextBox VerticalAlignment="Stretch" Margin="0" MinHeight="40" Text="Hello"/>
-                    <Button Margin="0 8 0 0" Grid.Row="1" Content="Send message"/>
+                    <TextBox x:Name="messageTb" VerticalAlignment="Stretch" Margin="0" MinHeight="40" Text="Hello"/>
+                    <StackPanel Margin="0 8 0 0" Grid.Row="1">
+                        <StackPanel Orientation="Horizontal">
+                            <RadioButton GroupName="to" VerticalAlignment="Center" Content="To Selected Chat"/>
+                            <RadioButton GroupName="to" IsChecked="True" x:Name="sendToNumberRadioButton" VerticalAlignment="Center" Content="To Number:" Margin="8 0" />
+                            <TextBox x:Name="sendToNumberTb" VerticalAlignment="Center" Width="80" />
+                        </StackPanel>
+                        <Button x:Name="sendToNumberButton" Margin="0 8 0 0" Content="Send message" Click="sendToNumberButton_Click"/>
+
+                    </StackPanel>
                 </Grid>
                 
                 <Grid Grid.Row="2" Margin="0 8 0 0">
@@ -49,11 +57,11 @@
                             <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="auto"/>
                         </Grid.ColumnDefinitions>
-                        <Button Content="Get Last N Messages"/>
-                        <TextBox VerticalAlignment="Center" Margin="8 0 0 0" Text="10" Grid.Column="1" Width="40"/>
+                        <Button x:Name="getLastNMessagesButton" Content="Get Last N Messages" Click="getLastNMessagesButton_Click"/>
+                        <TextBox x:Name="getLastNMessageArgTb" VerticalAlignment="Center" Margin="8 0 0 0" Text="10" Grid.Column="1" Width="40"/>
                     </Grid>
 
-                    <ListBox Margin="8 8 16 16" Grid.Row="1"></ListBox>
+                    <ListBox x:Name="getLasNMessagesResultsListBox" Margin="8 8 16 16" Grid.Row="1"></ListBox>
                 </Grid>
 
                 <GridSplitter Height="5" ResizeBehavior="PreviousAndNext" Grid.Row="1" ResizeDirection="Rows" HorizontalAlignment="Stretch"/>
@@ -67,11 +75,19 @@
                 </Grid.RowDefinitions>
                 <Grid  >
                     <StackPanel>
-                        <Button x:Name="button" Content="Get Chats" Margin="0 0 0 8"  />
-                        <Button x:Name="button1" Content="Hello"  />
+                        <Grid Margin="0 0 0 8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="clientHandleTb" VerticalAlignment="Center" Margin="0 0 4 0"/>
+                        <Button Grid.Column="1" x:Name="createClientButton" Content="Create Client" Margin="4 0 0 0" Click="createClientButton_Click"  />
+                        </Grid>
+                        <Button x:Name="helloButton" Content="Hello" Margin="0 0 0 8" Click="helloButton_Click"  />
+                        <Button x:Name="getChatsButton" Content="Get Chats" Margin="0 0 0 8" Click="getChatsButton_Click"  />
                     </StackPanel>
                 </Grid>
-                <ListBox x:Name="listBox" Grid.Row="1" Margin="0 8 0 0"  />
+                <ListBox x:Name="chatsListBox" Grid.Row="1" Margin="0 8 0 0"  />
 
             </Grid>
 

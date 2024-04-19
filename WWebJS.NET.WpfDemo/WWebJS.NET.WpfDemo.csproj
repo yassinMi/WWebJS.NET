@@ -139,8 +139,8 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="WWebJS.NET, Version=0.1.42.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\WWebJS.NET.0.1.42\lib\net462\WWebJS.NET.dll</HintPath>
+    <Reference Include="WWebJS.NET, Version=0.1.43.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\WWebJS.NET.0.1.43\lib\net462\WWebJS.NET.dll</HintPath>
       <Private>True</Private>
     </Reference>
   </ItemGroup>
@@ -190,12 +190,12 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="packages\WWebJS.NET.0.1.42\build\462\WWebJS.NET.targets" Condition="Exists('packages\WWebJS.NET.0.1.42\build\462\WWebJS.NET.targets')" />
+  <Import Project="packages\WWebJS.NET.0.1.43\build\462\WWebJS.NET.targets" Condition="Exists('packages\WWebJS.NET.0.1.43\build\462\WWebJS.NET.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('packages\WWebJS.NET.0.1.42\build\462\WWebJS.NET.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\WWebJS.NET.0.1.42\build\462\WWebJS.NET.targets'))" />
+    <Error Condition="!Exists('packages\WWebJS.NET.0.1.43\build\462\WWebJS.NET.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\WWebJS.NET.0.1.43\build\462\WWebJS.NET.targets'))" />
   </Target>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

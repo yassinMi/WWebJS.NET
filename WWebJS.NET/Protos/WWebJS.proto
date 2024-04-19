@@ -2,30 +2,90 @@ syntax = "proto3";
 
 package WWebJsService;
 
+import "Message.proto";
+import "Contact.proto";
+import "google/protobuf/empty.proto";
+
 service WWebJsService {
-    rpc GetMessages(GetMessagesRequest) returns(GetMessagesResponse){}
-    rpc GetLastMessage(GetLastMessageRequest) returns(GetLastMessageResponse){}
+    rpc DevGetMessages(DevGetMessagesRequest) returns(DevGetMessagesResponse){}
+    rpc DevGetLastMessage(DevGetLastMessageRequest) returns(DevGetLastMessageResponse){}
+    rpc InitClient(InitClientRequest) returns(stream InitClientResponse){}
+    rpc SendMessage(SendMessageRequest) returns(SendMessageResponse){}
+    rpc SetOptions(WWebJSServiceOptions) returns(google.protobuf.Empty){}
 }
-message GetMessagesRequest{
-    Contact contact =1;
+message DevGetMessagesRequest{
+    DevContact contact =1;
 }
-message GetMessagesResponse{
-    repeated Message messages =1;
-}
-
-message GetLastMessageRequest {
-    Contact contact =1;
-}
-message GetLastMessageResponse{
-     Message message =1;
+message DevGetMessagesResponse{
+    repeated DevMessage messages =1;
 }
 
-message Message{
+message DevGetLastMessageRequest {
+    Contact contact =1;
+}
+message DevGetLastMessageResponse{
+    Message message =1;
+}
+
+message DevMessage{
     string body =1;
 }
 
-message Contact{
+message DevContact{
     string phone =1;
-
+}
+message ClientCreationOptions{
+    string sessionFolder = 1;
+}
+message InitClientRequest{
+    ClientCreationOptions clientCreationOptions=1;
+}
+message InitClientResponse{
+    ClientEventType eventType = 1;
+    string eventArgsJson = 2;//todo type safe impl
+}
+message SendMessageRequest{
+    //this is used as a directory name for the local session data
+    string clientHandle =1;
+    string chatId =2;
+    MessageContent content = 3;
+    MessageSendOptions options = 4;
+}
+message SendMessageResponse{
+    Message message =1;
 }
 
+// Events that can be emitted by the client
+enum ClientEventType {
+    AUTHENTICATED = 0;
+    AUTHENTICATION_FAILURE = 1;
+    READY = 2;
+    MESSAGE_RECEIVED = 3;
+    MESSAGE_CREATE = 4;
+    MESSAGE_REVOKED_EVERYONE = 5;
+    MESSAGE_REVOKED_ME = 6;
+    MESSAGE_ACK = 7;
+    MESSAGE_EDIT = 8;
+    MEDIA_UPLOADED = 9;
+    CONTACT_CHANGED = 10;
+    GROUP_JOIN = 11;
+    GROUP_LEAVE = 12;
+    GROUP_ADMIN_CHANGED = 13;
+    GROUP_MEMBERSHIP_REQUEST = 14;
+    GROUP_UPDATE = 15;
+    QR_RECEIVED = 16;
+    LOADING_SCREEN = 17;
+    DISCONNECTED = 18;
+    STATE_CHANGED = 19;
+    BATTERY_CHANGED = 20;
+    REMOTE_SESSION_SAVED = 21;
+    CALL = 22;
+}
+
+// WWebJSServiceOptions message
+message WWebJSServiceOptions {
+    // Path to the Chrome executable
+    string chrome_executable_path = 1;
+    // Flag indicating if Chrome should run in headless mode
+    bool headless_chrome_mode = 2;
+}

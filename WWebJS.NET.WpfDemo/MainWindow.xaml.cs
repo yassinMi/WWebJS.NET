@@ -5,6 +5,8 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -30,73 +32,15 @@ namespace WWebJS.NET.WpfDemo
 
             LogInfo("demo app started");
 
-            button1.Click += async (s, e) =>
-            {
-
-                try
-                {
-                    bool packaged = ! Keyboard.IsKeyDown(Key.LeftCtrl);
-                    if (!packaged)
-                    {
-                        //hello test using grpc directly
-                        LogInfo("running test with existing worker instance (TEST pipe name]");
-                        LogInfo($"getting result");
-                        var channel = new GrpcDotNetNamedPipes.NamedPipeChannel(".", "TEST");
-                        var Client = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
-                        var contact = new Contact() { Phone = "yass phone" };
-                        var req = new GetLastMessageRequest() { Contact = contact };
-                        var res = await Client.GetLastMessageAsync(req);
-                        LogInfo($"recieved response: {res.Message.Body}");
-                    }
-                    else
-                    {
-                        //hello test
-
-                        LogInfo("starting packaged/node worker ...");
-                        WWebJSWorkerStartInfo wsi = new WWebJSWorkerStartInfo(("x64/node.exe"), "wwebjs-dotnet-server/");
-
-                        //WWebJSWorker.ServerExecutablePath = @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\bin\wwebjs-dotnet-server.exe";
-                        using (var worker =currentWorker = new WWebJSWorker(wsi))
-                        {
-                            worker.StatusChanged += onWorkerStatusChanged;
-                            worker.ProcessOutputDataReceived += (ss, ee) =>
-                            {
-                                LogInfo(ee.Data);
-                            };
-                            worker.ProcessErrorDataReceived += (ss, ee) =>
-                            {
-                                LogError(ee.Data);
-                            };
-                            worker.Log = (ee) =>
-                            {
-                                LogInfo(ee);
-                            };
-
-                            await worker.Start();
-
-                            var contact = new Contact() { Phone = "yass phone" };
-                            var req = new GetLastMessageRequest() { Contact = contact };
-
-                            var res = await worker.Client.GetLastMessageAsync(req);
-                            LogInfo($"recieved response: {res.Message.Body}" );
-                            await Task.Delay(1000);
-                        }
-                        LogInfo($"end scope:");
-
-                    }
-
-
-                }
-                catch (Exception err)
-                {
-                    LogError( err.ToString());
-
-                }
-
-
-            };
+         
         }
+        static WWebJSWorkerStartInfo wsi = new WWebJSWorkerStartInfo(("x64/node.exe"), @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\");
+
         WWebJSWorker currentWorker;
+
+        public WWebJSWorker CurrentLastingWorker { get; private set; }
+        public string CurrentInitializedClientHandle { get; private set; }
+
         private void onWorkerStatusChanged(object sender, EventArgs e)
         {
             onStatus($"Worker Status: {currentWorker.Status}");
@@ -132,6 +76,201 @@ namespace WWebJS.NET.WpfDemo
                 if (shouldScroll) logsRtb.ScrollToEnd();
             }));
 
+
+        }
+
+       
+
+        private void getChatsButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                throw new NotImplementedException();
+            }
+            catch (Exception err)
+            {
+                repErr(err);
+            }
+        }
+
+        private void getLastNMessagesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                throw new NotImplementedException();
+            }
+            catch (Exception err)
+            {
+                repErr(err);
+            }
+        }
+
+        private async void sendToNumberButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (sendToNumberRadioButton.IsChecked==true)
+                {
+                    var num = sendToNumberTb.Text;
+                    if (string.IsNullOrWhiteSpace(num)) throw new InvalidUserOperation("eempty number");
+                    if (CurrentLastingWorker == null) throw new InvalidUserOperation("current worker not initialized");
+                    if (CurrentLastingWorker.Status != WorkerStatus.Connected) throw new InvalidUserOperation("current worker not connected");
+                    if (CurrentInitializedClientHandle == null) throw new InvalidUserOperation("create a client first");
+
+                    var res = await CurrentLastingWorker.Client.SendMessageAsync(new SendMessageRequest()
+                    {
+                        ChatId = num,
+                        ClientHandle = CurrentInitializedClientHandle,
+                        Content = new MessageContent() { Text="hi"},
+                        
+                    });
+                    LogInfo($"wp message sent: {res.Message.Body}");
+
+                }
+                else
+                {
+                    if (chatsListBox.SelectedItem == null)
+                    {
+                        throw new InvalidUserOperation("no selected item");
+                    }
+
+                }
+            }
+            catch (Exception err)
+            {
+                repErr(err);
+            }
+        }
+        class InvalidUserOperation: Exception
+        {
+            public InvalidUserOperation(string message):base(message)
+            {
+
+            }
+            
+        }
+
+        private void repErr(Exception err)
+        {
+            string content = err.ToString();
+            if (err is InvalidUserOperation) content = err.Message;
+            LogError(content);
+            MessageBox.Show(content, "WWebJS.NET.WpfDemo", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        private async void helloButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                bool packaged = !Keyboard.IsKeyDown(Key.LeftCtrl);
+                if (!packaged)
+                {
+                    //hello test using grpc directly
+                    LogInfo("running test with existing worker instance (TEST pipe name]");
+                    LogInfo($"getting result");
+                    var channel = new GrpcDotNetNamedPipes.NamedPipeChannel(".", "TEST");
+                    var Client = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
+                    var contact = new Contact() { Number = "yass phone" };
+                    var req = new DevGetLastMessageRequest() { Contact = contact };
+                    var res = await Client.DevGetLastMessageAsync(req);
+                    LogInfo($"recieved response: {res.Message.Body}");
+                }
+                else
+                {
+                    //hello test
+
+                    LogInfo("starting packaged/node worker ...");
+
+                    //WWebJSWorker.ServerExecutablePath = @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\bin\wwebjs-dotnet-server.exe";
+                    using (var worker = currentWorker = new WWebJSWorker(wsi))
+                    {
+                        worker.StatusChanged += onWorkerStatusChanged;
+                        worker.ProcessOutputDataReceived += (ss, ee) =>
+                        {
+                            LogInfo(ee.Data);
+                        };
+                        worker.ProcessErrorDataReceived += (ss, ee) =>
+                        {
+                            LogError(ee.Data);
+                        };
+                        worker.Log = (ee) =>
+                        {
+                            LogInfo(ee);
+                        };
+
+                        await worker.Start();
+
+                        var contact = new Contact() { Number = "yass phone" };
+                        var req = new DevGetLastMessageRequest() { Contact = contact };
+
+                        var res = await worker.Client.DevGetLastMessageAsync(req);
+                        LogInfo($"recieved response: {res.Message.Body}");
+                        await Task.Delay(1000);
+                    }
+                    LogInfo($"end scope:");
+
+                }
+
+
+            }
+            catch (Exception err)
+            {
+                LogError(err.ToString());
+
+            }
+
+        }
+
+        private async void createClientButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var clientHandle = clientHandleTb.Text;
+                if (string.IsNullOrWhiteSpace(clientHandle)) throw new InvalidUserOperation("empty client name");
+                if (!Regex.IsMatch(clientHandle, "[a-zA-Z0-9]+")) throw new InvalidUserOperation("invalid client name");
+
+                if (CurrentLastingWorker == null)
+                    CurrentLastingWorker = new WWebJSWorker(wsi);
+                await CurrentLastingWorker.Start();
+                var stream = CurrentLastingWorker.Client.InitClient(new InitClientRequest()
+                {
+                    ClientCreationOptions = new ClientCreationOptions
+                    {
+                        SessionFolder = clientHandle
+                    }
+                });
+                while (await stream.ResponseStream.MoveNext(CancellationToken.None))
+                {
+                    var curr = stream.ResponseStream.Current;
+                    LogInfo($"[{curr.EventType}]: {curr.EventArgsJson} ");
+                    switch (curr.EventType)
+                    {
+                        case ClientEventType.Authenticated:
+                            break;
+                        case ClientEventType.AuthenticationFailure:
+                            break;
+                        case ClientEventType.Ready:
+                            break;
+                        case ClientEventType.MessageReceived:
+                            break;
+                        case ClientEventType.MessageCreate:
+                            break;
+                        case ClientEventType.QrReceived:
+                            break;
+                        case ClientEventType.LoadingScreen:
+                            break;
+                        case ClientEventType.Disconnected:
+                       
+                        default:
+                            break;
+                    }
+                }
+
+            }
+            catch (Exception err)
+            {
+                repErr(err);
+            }
 
         }
     }

@@ -29,6 +29,11 @@
     "targets": [
       "node19-win-x64"
     ],
-    "assets": ["./node_modules/grpc/src/node/extension_binary/node-v83-win32-x64-unknown/grpc_node.node"]
+    "assets": [
+      "./node_modules/grpc/src/node/extension_binary/node-v83-win32-x64-unknown/grpc_node.node"
+    ]
+  },
+  "devDependencies": {
+    "@types/google-protobuf": "^3.15.12"
   }
 }
