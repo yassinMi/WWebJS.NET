@@ -81,6 +81,10 @@ public class WWebJSWorker : IDisposable
         }
     }
 
+    ///<summary>
+    /// the index.js entry file relative to the <see cref="WorkerStartInfo.NodeAppDirectory"/> , e.g "dist/index.js"
+    ///</summary>
+    public static string RelativeEntryPointFile{get;set;} = "dist/index.js";
     private async Task Start_impl()
     {
 
@@ -124,10 +128,10 @@ public class WWebJSWorker : IDisposable
                 {
                     throw new Exception($"wds app directory not found or is not valid at : '{WorkerStartInfo.NodeAppDirectory}'");
                 }
-                var indexJsPath = Path.Combine(WorkerStartInfo.NodeAppDirectory, "index.js");
+                var indexJsPath = Path.Combine(WorkerStartInfo.NodeAppDirectory, RelativeEntryPointFile);
                 if (!File.Exists(indexJsPath))
                 {
-                    throw new Exception($"index.js expected in app directory : '{WorkerStartInfo.NodeAppDirectory}'");
+                    throw new Exception($"{RelativeEntryPointFile} expected in app directory : '{WorkerStartInfo.NodeAppDirectory}'");
                 }
                 //todo: validate package.json version to ensure compatibility
 

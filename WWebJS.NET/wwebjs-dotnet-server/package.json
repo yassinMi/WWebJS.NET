@@ -2,12 +2,15 @@
   "name": "wwebjs-dotnet-server",
   "version": "1.0.0",
   "description": "The js backend of WWebJS.NET which is a .NET wrapper for WWebJs",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "generate:proto": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./generated --grpc_out=grpc_js:./generated -I ../Protos ../Protos/*.proto",
+    "generate:proto": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./src/generated --grpc_out=grpc_js:./src/generated -I ../Protos ../Protos/*.proto",
+    "generate:proto:ts": "protoc --plugin=protoc-gen-ts_proto=.\\\\node_modules\\\\.bin\\\\protoc-gen-ts_proto.cmd --ts_proto_out=./src/generated -I ../Protos ../Protos/*.proto",
     "generate:package": "pkg .  -o \".\\bin\\wwebjs-dotnet-server.exe\"",
-    "build": "npm run generate:proto && npm run generate:package"
+    "compile": "tsc -p .",
+    "prebuild": "npm run generate:proto && npm run generate:proto:ts && npm run compile",
+    "build": "npm run prebuild && npm run generate:package"
   },
   "keywords": [
     "WWebJs",
@@ -19,9 +22,11 @@
   "author": "YassinMi",
   "license": "MIT",
   "dependencies": {
+    "@tsconfig/node14": "^14.1.2",
     "google-protobuf": "^3.21.2",
     "grpc": "^1.24.11",
-    "grpc-js-namedpipes": "^0.1.1",
+    "grpc-js-namedpipes": "^0.1.6",
+    "protobufjs": "^7.2.6",
     "whatsapp-web.js": "^1.23.0"
   },
   "bin": "index.js",
@@ -34,6 +39,7 @@
     ]
   },
   "devDependencies": {
-    "@types/google-protobuf": "^3.15.12"
+    "@types/google-protobuf": "^3.15.12",
+    "ts-proto": "^1.172.0"
   }
 }

@@ -11,7 +11,7 @@ service WWebJsService {
     rpc DevGetLastMessage(DevGetLastMessageRequest) returns(DevGetLastMessageResponse){}
     rpc InitClient(InitClientRequest) returns(stream InitClientResponse){}
     rpc SendMessage(SendMessageRequest) returns(SendMessageResponse){}
-    rpc SetOptions(WWebJSServiceOptions) returns(google.protobuf.Empty){}
+    rpc SetOptions(WWebJSServiceOptions) returns(WWebJSServiceOptions){}
 }
 message DevGetMessagesRequest{
     DevContact contact =1;
@@ -35,19 +35,19 @@ message DevContact{
     string phone =1;
 }
 message ClientCreationOptions{
-    string sessionFolder = 1;
+    string session_folder = 1;
 }
 message InitClientRequest{
-    ClientCreationOptions clientCreationOptions=1;
+    ClientCreationOptions client_creation_options=1;
 }
 message InitClientResponse{
-    ClientEventType eventType = 1;
-    string eventArgsJson = 2;//todo type safe impl
+    ClientEventType event_type = 1;
+    string event_args_json = 2;//todo type safe impl
 }
 message SendMessageRequest{
     //this is used as a directory name for the local session data
-    string clientHandle =1;
-    string chatId =2;
+    string client_handle =1;
+    string chat_id =2;
     MessageContent content = 3;
     MessageSendOptions options = 4;
 }
@@ -84,8 +84,15 @@ enum ClientEventType {
 
 // WWebJSServiceOptions message
 message WWebJSServiceOptions {
-    // Path to the Chrome executable
+    // Path to the Chrome executable that the service will use 
     string chrome_executable_path = 1;
-    // Flag indicating if Chrome should run in headless mode
+    // A value indicating whether Chrome should run in headless mode
     bool headless_chrome_mode = 2;
+    // The root directory where client session folders are located (the server will read and write to this folder, e.g. AppData/MyApp/sessions/)
+    string user_data_dir = 3;
+    // Additional args passed to chromium
+    repeated string chrome_args = 4;
+    // Enable this for debugging 
+    bool verbose = 5;
+
 }

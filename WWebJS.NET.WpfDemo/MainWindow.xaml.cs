@@ -184,19 +184,7 @@ namespace WWebJS.NET.WpfDemo
                     //WWebJSWorker.ServerExecutablePath = @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\bin\wwebjs-dotnet-server.exe";
                     using (var worker = currentWorker = new WWebJSWorker(wsi))
                     {
-                        worker.StatusChanged += onWorkerStatusChanged;
-                        worker.ProcessOutputDataReceived += (ss, ee) =>
-                        {
-                            LogInfo(ee.Data);
-                        };
-                        worker.ProcessErrorDataReceived += (ss, ee) =>
-                        {
-                            LogError(ee.Data);
-                        };
-                        worker.Log = (ee) =>
-                        {
-                            LogInfo(ee);
-                        };
+                        trackWorker(worker);
 
                         await worker.Start();
 
@@ -220,7 +208,24 @@ namespace WWebJS.NET.WpfDemo
             }
 
         }
-
+        void trackWorker(WWebJSWorker worker)
+        {
+            worker.StatusChanged += onWorkerStatusChanged;
+            worker.ProcessOutputDataReceived += (ss, ee) =>
+            {
+                LogInfo(ee.Data);
+            };
+            worker.ProcessErrorDataReceived += (ss, ee) =>
+            {
+                LogError(ee.Data);
+            };
+            worker.Log = (ee) =>
+            {
+                LogInfo(ee);
+            };
+        }
+        static string TestDataRoot = @"E:\TOOLS\WWebJS.NET\WWebJS.NET\data.yass";
+        static string TestChromePath = @"C:\Program Files\WhatsappImagesScraper\chromium\win64-982053\chrome-win\chrome.exe";
         private async void createClientButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -229,9 +234,18 @@ namespace WWebJS.NET.WpfDemo
                 if (string.IsNullOrWhiteSpace(clientHandle)) throw new InvalidUserOperation("empty client name");
                 if (!Regex.IsMatch(clientHandle, "[a-zA-Z0-9]+")) throw new InvalidUserOperation("invalid client name");
 
-                if (CurrentLastingWorker == null)
+
                     CurrentLastingWorker = new WWebJSWorker(wsi);
+                trackWorker(CurrentLastingWorker);
                 await CurrentLastingWorker.Start();
+                //# set options
+                await CurrentLastingWorker.Client.SetOptionsAsync(new WWebJSServiceOptions()
+                {
+                    ChromeExecutablePath = TestChromePath,
+                    HeadlessChromeMode = false,
+                    UserDataDir = TestDataRoot,
+                    Verbose=true,
+                });
                 var stream = CurrentLastingWorker.Client.InitClient(new InitClientRequest()
                 {
                     ClientCreationOptions = new ClientCreationOptions
