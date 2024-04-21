@@ -1,7 +1,7 @@
 
 # WWebJS.NET
 
-A thin wrapper around [whatsapp-web.js](https://wwebjs.dev/), that uses Protocol Buffers RPC over named pipes. It aims to expose a similar API using C#.
+A thin wrapper around [whatsapp-web.js](https://wwebjs.dev/) that uses Protocol Buffers RPC over named pipes. It aims to expose a similar API using C#.
 
 ## Example
 ```c#
@@ -43,7 +43,7 @@ while (await stream.ResponseStream.MoveNext(CancellationToken.None))
                 var result = await worker.Channel.SendMessageAsync(new SendMessageRequest()
                     {
                         ChatId = current.DataJson["from"],
-                        ClientHandle = CurrentInitializedClientHandle,
+                        ClientHandle = "foo",
                         Content = new MessageContent() { Text="pong"},
                     });
                 Console.WriteLine($"Message sent: ${result}")
