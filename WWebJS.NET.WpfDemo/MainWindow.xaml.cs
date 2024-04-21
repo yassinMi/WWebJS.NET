@@ -121,7 +121,7 @@ namespace WWebJS.NET.WpfDemo
                     {
                         ChatId = num,
                         ClientHandle = CurrentInitializedClientHandle,
-                        Content = new MessageContent() { Text="hi"},
+                        Content = new MessageContent() { Text=messageTb.Text},
                         
                     });
                     LogInfo($"wp message sent: {res.Message.Body}");
@@ -264,6 +264,8 @@ namespace WWebJS.NET.WpfDemo
                         case ClientEventType.AuthenticationFailure:
                             break;
                         case ClientEventType.Ready:
+                        CurrentInitializedClientHandle=clientHandle;
+                            onStatus($"Ready Client '{CurrentInitializedClientHandle}'");
                             break;
                         case ClientEventType.MessageReceived:
                             break;
@@ -272,9 +274,12 @@ namespace WWebJS.NET.WpfDemo
                         case ClientEventType.QrReceived:
                             break;
                         case ClientEventType.LoadingScreen:
+                            onStatus($"Loading Client '{CurrentInitializedClientHandle}'");
                             break;
                         case ClientEventType.Disconnected:
-                       
+                             onStatus($"Disconnected Client '{CurrentInitializedClientHandle}'");
+                            break;
+
                         default:
                             break;
                     }

@@ -7,6 +7,7 @@ import messages from "./generated/WWebJS_pb";
 import {sendUnaryData,handleUnaryCall} from "@grpc/grpc-js";
 const VERSION = require('../package.json').version;
 import { WWebJSServiceImpl } from "./WWebJSService";
+import {  WWebJsServiceService } from "./generated/WWebJS";
 if(process.argv.length<3){
     throw new Error("expected at 1 or more arguments")
 }
@@ -31,13 +32,16 @@ var serviceImpl = new WWebJSServiceImpl({
     verbose : true
 });
 
+
 var l = new NamedPipeServer(NAMED_PIPE_NAME)
 
-l.addService(services.WWebJsServiceService, 
-    {
-        initClient:serviceImpl.InitClient,
+l.addServiceGrpcJs(WWebJsServiceService, 
+     {
+        devGetLastMessage:serviceImpl.devGetLastMessage,
+        devGetMessages:serviceImpl.devGetMessages,
+        initClient:serviceImpl.initClient,
+        sendMessage:serviceImpl.sendMessage,
         setOptions:serviceImpl.setOptions,
-        sendMessage:serviceImpl.SendMessage,
     })
 l.start((err)=>{
     if(err===undefined){

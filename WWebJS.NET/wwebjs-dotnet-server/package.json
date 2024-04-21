@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "generate:proto": "grpc_tools_node_protoc --js_out=import_style=commonjs,binary:./src/generated --grpc_out=grpc_js:./src/generated -I ../Protos ../Protos/*.proto",
-    "generate:proto:ts": "protoc --plugin=protoc-gen-ts_proto=.\\\\node_modules\\\\.bin\\\\protoc-gen-ts_proto.cmd --ts_proto_out=./src/generated -I ../Protos ../Protos/*.proto",
+    "generate:proto:ts": "protoc --plugin=protoc-gen-ts_proto=.\\\\node_modules\\\\.bin\\\\protoc-gen-ts_proto.cmd --ts_proto_out=./src/generated -I ../Protos ../Protos/*.proto --ts_proto_opt=outputServices=grpc-js",
     "generate:package": "pkg .  -o \".\\bin\\wwebjs-dotnet-server.exe\"",
     "compile": "tsc -p .",
     "prebuild": "npm run generate:proto && npm run generate:proto:ts && npm run compile",
@@ -25,8 +25,9 @@
     "@tsconfig/node14": "^14.1.2",
     "google-protobuf": "^3.21.2",
     "grpc": "^1.24.11",
-    "grpc-js-namedpipes": "^0.1.6",
+    "grpc-js-namedpipes": "^0.1.8",
     "protobufjs": "^7.2.6",
+    "rxjs": "^7.8.1",
     "whatsapp-web.js": "^1.23.0"
   },
   "bin": "index.js",
