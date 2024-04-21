@@ -1,7 +1,7 @@
 
 # WWebJS.NET
 
-A thin wraper around WWebjs, that uses Protocol Buffers RPC over named pipes. It aims to expose a similar API using C#.
+A thin wrapper around [whatsapp-web.js](https://wwebjs.dev/), that uses Protocol Buffers RPC over named pipes. It aims to expose a similar API using C#.
 
 ## Example
 ```c#
