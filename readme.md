@@ -11,7 +11,7 @@ var worker = new WWebJSWorker(workerStartInfo));
 await worker.Start(); 
 
 //configure 
-await worker.Channel.SetOptionsAsync(new WWebJSServiceOptions()
+await worker.Proxy.SetOptionsAsync(new WWebJSServiceOptions()
 {
     ChromeExecutablePath = "path/to/chrome.exe", 
     HeadlessChromeMode = false,
@@ -20,7 +20,7 @@ await worker.Channel.SetOptionsAsync(new WWebJSServiceOptions()
 });
 
 //create a Client 
-var stream = worker.Channel.InitClient(new InitClientRequest()
+var stream = worker.Proxy.InitClient(new InitClientRequest()
 {
     ClientCreationOptions = new ClientCreationOptions
     {
@@ -37,10 +37,10 @@ while (await stream.ResponseStream.MoveNext(CancellationToken.None))
         case ClientEventType.Ready:
             Console.WriteLine($"Client Ready'");
             break;
-        case ClientEventType.Message:
+        case ClientEventType.MessageReceived:
             if (current.DataJson["body"] == '!ping') 
             {
-                var result = await worker.Channel.SendMessageAsync(new SendMessageRequest()
+                var result = await worker.Proxy.SendMessageAsync(new SendMessageRequest()
                     {
                         ChatId = current.DataJson["from"],
                         ClientHandle = "foo",
@@ -48,8 +48,6 @@ while (await stream.ResponseStream.MoveNext(CancellationToken.None))
                     });
                 Console.WriteLine($"Message sent: ${result}")
             }
-            break;
-        case ClientEventType.MessageReceived:
             break;
         case ClientEventType.MessageCreate:
             break;

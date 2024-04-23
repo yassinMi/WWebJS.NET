@@ -34,12 +34,20 @@ public class WWebJSWorker : IDisposable
             throw new Exception("WWebJS.NET: failed to access private fields with reflection, this error indicates internal changes in GrpcDotNetNamedPipes that breaks a temporary workaround", err);
         }
     }
-
+    /// <summary>
+    /// Create an anonymous worker that will automatically close on disposal or after the process ends
+    /// </summary>
+    /// <param name="workerStartInfo"></param>
     public WWebJSWorker(WWebJSWorkerStartInfo workerStartInfo)
     {
         NamedPipeName = Guid.NewGuid().ToString();
         this.WorkerStartInfo = workerStartInfo;
     }
+    /// <summary>
+    /// Create a global worker with the specified name or connect to an existing one. NOTE: only use this constructor the worker is intended to be re-used across application instances
+    /// </summary>
+    /// <param name="workerStartInfo"></param>
+    /// <param name="serverName">unique name</param>
     public WWebJSWorker(WWebJSWorkerStartInfo workerStartInfo, string serverName)
     {
         if (string.IsNullOrWhiteSpace(serverName))
@@ -54,7 +62,7 @@ public class WWebJSWorker : IDisposable
     string NamedPipeName { get; set; }
     public WWebJSWorkerStartInfo WorkerStartInfo { get; }
     public event EventHandler? StatusChanged;
-    public static int GlobalWorkerConnectionTimeout {get;set;} = 2000;
+    public static int GlobalWorkerConnectionTimeout { get; set; } = 2000;
 
 
 
@@ -90,7 +98,7 @@ public class WWebJSWorker : IDisposable
         Console.WriteLine(str);
     }
     ///<summary>
-    ///start the node process (named pipe server)
+    ///start the node process (named pipe server), or attempt to connect to an existing one if applicable
     ///</summary>
     public Task Start()
     {
@@ -127,7 +135,7 @@ public class WWebJSWorker : IDisposable
                 //detecting existing server
                 OnStatusChange(WorkerStatus.Connecting);
                 var chOpt_ = new GrpcDotNetNamedPipes.NamedPipeChannelOptions() { ConnectionTimeout = GlobalWorkerConnectionTimeout };
-                var ch_ = new GrpcDotNetNamedPipes.NamedPipeChannel(".", NamedPipeName,chOpt_);
+                var ch_ = new GrpcDotNetNamedPipes.NamedPipeChannel(".", NamedPipeName, chOpt_);
                 var proxy = new WWebJsService.WWebJsService.WWebJsServiceClient(ch_);
                 if (await TryGetPingResponse(proxy) == true)
                 {
@@ -167,7 +175,7 @@ public class WWebJSWorker : IDisposable
                 if (!IsGlobal)
                 {
                     heartBeatThread = new Thread(heartBeatFn);
-                    heartBeatThread.IsBackground=true;
+                    heartBeatThread.IsBackground = true;
                     heartbeatCts = new CancellationTokenSource();
                     heartBeatThread.Start();
                 }
@@ -187,12 +195,15 @@ public class WWebJSWorker : IDisposable
 
 
     CancellationTokenSource? heartbeatCts;
+    /// <summary>
+    /// The interval at which heartbeat signals are sent to the server (only used for anonymous type)
+    /// </summary>
     static public int HeartbeatIntervalMs { get; set; } = 1000;
     private void heartBeatFn(object? obj)
     {
         try
         {
-            NamedPipeClientStream client = new NamedPipeClientStream(this.NamedPipeName+"-mi6d693136");
+            NamedPipeClientStream client = new NamedPipeClientStream(this.NamedPipeName + "-mi6d693136");
             client.Connect(5000);
             while (true)
             {
@@ -333,7 +344,9 @@ public class WWebJSWorker : IDisposable
 
     bool isDisposed;
     private Thread? heartBeatThread;
-
+    /// <summary>
+    /// For global type, this does nothing. for anonymous type this is equivalent to <see cref="Close"/>
+    /// </summary>
     public void Dispose()
     {
         if (isDisposed) return;
@@ -348,7 +361,9 @@ public class WWebJSWorker : IDisposable
         }
         isDisposed = true;
     }
-
+    /// <summary>
+    /// Attempt to close the associated Node server, throws exceptions if something went wrong
+    /// </summary>
     public void Close()
     {
         LogStr("closing worker");
