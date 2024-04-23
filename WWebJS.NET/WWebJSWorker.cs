@@ -157,6 +157,7 @@ public class WWebJSWorker : IDisposable
             }
             else
             {
+                this.WorkerStartInfo.ValidateCanStartWithNode(true);
                 //running node.exe 
                 var indexJsPath = Path.Combine(WorkerStartInfo.NodeAppDirectory!, WWebJSWorkerStartInfo.RelativeEntryPointFile);
                 //todo: validate package.json version to ensure compatibility

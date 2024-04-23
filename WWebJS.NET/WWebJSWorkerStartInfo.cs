@@ -44,45 +44,45 @@ public struct WWebJSWorkerStartInfo
 
     public void ValidateCanStartWithPackagedExecutable (bool checkFiles)
     {
-        if (!string.IsNullOrWhiteSpace(PackagedExecutablePath))
+        if (string.IsNullOrWhiteSpace(PackagedExecutablePath))
         {
             throw new Exception("PackagedExecutablePath must be provided");
         }
-        if (!string.IsNullOrWhiteSpace(NodeAppDirectory))
+        if (checkFiles)
         {
-            throw new Exception("NodeAppDirectory must be provided");
-        }
-        if(checkFiles)
-        {
-            if (!File.Exists(this.NodeExecutablePath)) throw new Exception($"node.exe not found: '{this.NodeExecutablePath}'");
-                if (!Path.GetFileName(this.NodeExecutablePath).Equals("node.exe", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new Exception($"invalid node path: '{this.NodeExecutablePath}'");
-                }
-                if (!Directory.Exists(this.NodeAppDirectory))
-                {
-                    throw new Exception($"wds app directory not found or is not valid at : '{this.NodeAppDirectory}'");
-                }
-                if (!Directory.Exists(Path.Combine(this.NodeAppDirectory, "node_modules")))
-                {
-                    throw new Exception($"wds app directory not found or is not valid at : '{this.NodeAppDirectory}'");
-                }
-                var indexJsPath = Path.Combine(this.NodeAppDirectory, RelativeEntryPointFile);
-                if (!File.Exists(indexJsPath))
-                {
-                    throw new Exception($"{this} expected in app directory : '{this.NodeAppDirectory}'");
-                }
+            if (!File.Exists(this.PackagedExecutablePath)) throw new Exception($"packaged executable not found: '{this.PackagedExecutablePath}'");
         }
     }
     public void ValidateCanStartWithNode(bool checkFiles)
     {
-        if (!string.IsNullOrWhiteSpace(PackagedExecutablePath))
+        if (string.IsNullOrWhiteSpace(NodeExecutablePath))
         {
-            throw new Exception("PackagedExecutablePath must be provided");
+            throw new Exception("NodeExecutablePath must be provided");
         }
-        if(checkFiles)
+        if (string.IsNullOrWhiteSpace(NodeAppDirectory))
         {
-            if (!File.Exists(this.PackagedExecutablePath)) throw new Exception($"packaged executable not found: '{this.PackagedExecutablePath}'");
+            throw new Exception("NodeAppDirectory must be provided");
+        }
+        if (checkFiles)
+        {
+            if (!File.Exists(this.NodeExecutablePath)) throw new Exception($"node.exe not found: '{this.NodeExecutablePath}'");
+            if (!Path.GetFileName(this.NodeExecutablePath).Equals("node.exe", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new Exception($"invalid node path: '{this.NodeExecutablePath}'");
+            }
+            if (!Directory.Exists(this.NodeAppDirectory))
+            {
+                throw new Exception($"wds app directory not found or is not valid at : '{this.NodeAppDirectory}'");
+            }
+            if (!Directory.Exists(Path.Combine(this.NodeAppDirectory, "node_modules")))
+            {
+                throw new Exception($"wds app directory not found or is not valid at : '{this.NodeAppDirectory}'");
+            }
+            var indexJsPath = Path.Combine(this.NodeAppDirectory, RelativeEntryPointFile);
+            if (!File.Exists(indexJsPath))
+            {
+                throw new Exception($"{this} expected in app directory : '{this.NodeAppDirectory}'");
+            }
         }
     }
 }
