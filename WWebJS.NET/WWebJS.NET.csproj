@@ -5,11 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>10.0</LangVersion>
-    <Version>0.1.46</Version>
+    <Version>0.1.2</Version>
     <PackageDescription>A simple .NET wrapper for the whatsapp-web.js library. This runs a packaged Node.js server and doesn't require a Node.js installation</PackageDescription>
-    <AssemblyVersion>0.1.46.0</AssemblyVersion>
+    <AssemblyVersion>0.1.2.0</AssemblyVersion>
     <Authors>yassinMi</Authors>
     <Company></Company>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,11 +24,12 @@
     <Protobuf Include="Protos/*.proto" ProtoRoot="Protos/" />
   </ItemGroup>
   <ItemGroup>
-      <None Include="BuildTargets/net462/*" Pack="true" PackagePath="build/462/" />
-      <!--runttimes (node and/or packaged executable)-->
+      <None Include="../readme.md" Pack="true" PackagePath="\"/>
+      <!--runttimes (node and/or packaged executable) (disabled as we may consider having a second package for the large runtimes and dependencies-->
+      <!--None Include="BuildTargets/net462/*" Pack="true" PackagePath="build/462/" />
       <None Include="runtimes/win-x64/native/*" Pack="true" PackagePath="runtimes/win-x64/native/" />
-      <None Include="runtimes/win-x86/native/*" Pack="true" PackagePath="runtimes/win-x86/native/" />
-      <!--the js src tree in case we're not using pkg (NOTE: we disable this for quick dev-time build cyclles) -->
+      <None Include="runtimes/win-x86/native/*" Pack="true" PackagePath="runtimes/win-x86/native/" /-->
+      <!--the js src tree in case we're not using pkg (NOTE: we disable this for quick dev-time build cycles) -->
       <!--None Include="wwebjs-dotnet-server/node_modules/**/*.*" Pack="true" CopyToOutputDirectory="true" PackagePath="dependencies/wwebjs-dotnet-server/node_modules/" />
       <None Include="wwebjs-dotnet-server/package.json" Pack="true" CopyToOutputDirectory="true" PackagePath="dependencies/wwebjs-dotnet-server/" />
       <None Include="wwebjs-dotnet-server/**/*.js" Pack="true" CopyToOutputDirectory="true" PackagePath="dependencies/wwebjs-dotnet-server/" /-->
