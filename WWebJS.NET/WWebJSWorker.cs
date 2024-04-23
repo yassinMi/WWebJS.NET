@@ -32,27 +32,31 @@ public class WWebJSWorker : IDisposable
         {
             throw new Exception("WWebJS.NET: failed to access private fields with reflection, this error indicates internal changes in GrpcDotNetNamedPipes that breaks a temporary workaround", err);
         }
-
     }
 
+    public WWebJSWorker(WWebJSWorkerStartInfo workerStartInfo)
+    {
+        NamedPipeName = Guid.NewGuid().ToString();
+        this.WorkerStartInfo = workerStartInfo;
+    }
+    ///<summary>
+    /// the index.js entry file relative to the <see cref="WorkerStartInfo.NodeAppDirectory"/> , e.g "dist/index.js"
+    ///</summary>
+    public static string RelativeEntryPointFile { get; set; } = "dist/index.js";
     public Action<string> Log { get; set; } = DefaultLog;
+    public Exception? Error { get; private set; }
+    string NamedPipeName { get; set; }
+    public WWebJSWorkerStartInfo WorkerStartInfo { get; }
+        public event EventHandler? StatusChanged;
 
-    void LogStr(string str){
-        if(Log!=null)
-        Log.Invoke(str);
-    }
-    private static void DefaultLog(string str)
+    
+
+    public event DataReceivedEventHandler? ProcessOutputDataReceived;
+    public event DataReceivedEventHandler? ProcessErrorDataReceived;
+
+    private WWebJsService.WWebJsService.WWebJsServiceClient? _Client;
+    public WWebJsService.WWebJsService.WWebJsServiceClient? Client
     {
-        Console.WriteLine(str);
-    }
-
-    public event DataReceivedEventHandler ProcessOutputDataReceived;
-    public event DataReceivedEventHandler ProcessErrorDataReceived;
-
-    private WWebJsService.WWebJsService.WWebJsServiceClient _Client;
-    public WWebJsService.WWebJsService.WWebJsServiceClient Client
-    {
-
         get
         {
             if (Status != WorkerStatus.Connected) throw new InvalidOperationException($"Cannot use the worker instance, status='{Status}'");
@@ -60,34 +64,40 @@ public class WWebJSWorker : IDisposable
         }
         private set { _Client = value; }
     }
-    public WWebJSWorker(WWebJSWorkerStartInfo workerStartInfo)
+
+    Process? process;
+
+    Task? startingTask;
+    void LogStr(string str)
     {
-
-        NamedPipeName = Guid.NewGuid().ToString();
-
-        this.WorkerStartInfo = workerStartInfo;
-
+        if (Log != null)
+            Log.Invoke(str);
     }
-
-    Task startingTask;
+    private static void DefaultLog(string str)
+    {
+        Console.WriteLine(str);
+    }
+    ///<summary>
+    ///start the node process (named pipe server)
+    ///</summary>
     public Task Start()
     {
         lock (this)
         {
-            if (isDisposed) throw new InvalidOperationException("worker instance disposed");
+            throwIfDisposed();
             if (startingTask != null) return startingTask;
             startingTask = Start_impl();
             return startingTask;
         }
     }
 
-    ///<summary>
-    /// the index.js entry file relative to the <see cref="WorkerStartInfo.NodeAppDirectory"/> , e.g "dist/index.js"
-    ///</summary>
-    public static string RelativeEntryPointFile{get;set;} = "dist/index.js";
+    void throwIfDisposed()
+    {
+        if (isDisposed) throw new InvalidOperationException("worker instance disposed");
+    }
+    
     private async Task Start_impl()
     {
-
         try
         {
             bool isPackagedMode = false;
@@ -103,14 +113,11 @@ public class WWebJSWorker : IDisposable
             if (isPackagedMode)
             {
                 if (!File.Exists(WorkerStartInfo.PackagedExecutablePath)) throw new Exception($"packaged executable not found: '{WorkerStartInfo.PackagedExecutablePath}'");
-
                 var workerArgs = new string[] { NamedPipeName };
                 LogStr($"attempting to run '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
-
                 OnStatusChange(WorkerStatus.Connecting);
                 var processStarted = await StartWorkerWithArgs(WorkerStartInfo.PackagedExecutablePath, workerArgs);
                 if (!processStarted) throw new Exception("cannot start process");
-
             }
             else
             {
@@ -137,26 +144,20 @@ public class WWebJSWorker : IDisposable
 
                 var workerArgs = new string[] { indexJsPath, NamedPipeName };
                 LogStr($"attempting to run '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
-
                 OnStatusChange(WorkerStatus.Connecting);
                 var processStarted = await StartWorkerWithArgs(WorkerStartInfo.NodeExecutablePath, workerArgs);
                 if (!processStarted) throw new Exception("cannot start process");
-
             }
-
-
-
             var channel = new GrpcDotNetNamedPipes.NamedPipeChannel(".", NamedPipeName);
             Client = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
             LogStr($"attempting to get ping resp...");
             if (await TryGetPingResponse()) { OnStatusChange(WorkerStatus.Connected); }
             else throw new Exception("cannot start process, ping err");
 
-            process.Exited += hndlProcessExited;
+            process!.Exited += hndlProcessExited;
         }
         catch (System.Exception err)
         {
-
             LogStr(err.ToString());
             SetError(err);
             throw;
@@ -166,7 +167,7 @@ public class WWebJSWorker : IDisposable
 
     private void hndlProcessExited(object? sender, EventArgs e)
     {
-        LogStr($"worker_ process existed with code ${process.ExitCode} , exit time: {process.ExitTime}");
+        LogStr($"worker_ process existed with code ${process!.ExitCode} , exit time: {process.ExitTime}");
         OnStatusChange(WorkerStatus.Closed);
     }
 
@@ -174,26 +175,24 @@ public class WWebJSWorker : IDisposable
     {
         return await Task.FromResult(true);
     }
+
     void SetError(Exception err)
     {
         this.Error = err;
         OnStatusChange(WorkerStatus.Error);
     }
-    public event EventHandler StatusChanged;
+
     void OnStatusChange(WorkerStatus status)
     {
         if (Status == status) return;
         Status = status;
-        Task.Run(()=>{//avoiding a deadlock if the app uses dispatcher.invoke in handling this event while blocking on a Dispose() calls
+        Task.Run(() =>
+        {//avoiding a deadlock if the app uses dispatcher.invoke in handling this event while blocking on a Dispose() calls
             StatusChanged?.Invoke(this, EventArgs.Empty);
         });
-        
     }
-    public Exception Error { get; private set; }
-    string NamedPipeName { get; set; }
-    public WWebJSWorkerStartInfo WorkerStartInfo { get; }
 
-    Process process;
+    
 
     ///<summary>
     /// runs the specified <paramref name="program"/> (either node or the packaged exe, and passes the <paramref name="args"/>)
@@ -216,16 +215,14 @@ public class WWebJSWorker : IDisposable
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 RedirectStandardInput = true,
-                CreateNoWindow = false,
+                CreateNoWindow = WorkerStartInfo.CreateNoWindow,
 
             },
                 EnableRaisingEvents = true
             };
-
             DataReceivedEventHandler? onData = null;
             DataReceivedEventHandler? onError = null;
             EventHandler? hndlExited = null;
-
             onData = (s, e) =>
             {
                 if (e.Data != null && e.Data.Contains("Server listening"))
@@ -245,20 +242,17 @@ public class WWebJSWorker : IDisposable
                     LogStr($"Worker Error: {e.Data}");
                 }
             };
-
             hndlExited = (sender, e) =>
             {
                 LogStr($"worker process existed with code ${process.ExitCode} , exit time: {process.ExitTime}");
                 process.OutputDataReceived -= onData;
                 process.ErrorDataReceived -= onError;
                 process.Exited -= hndlExited;
-
                 if (!tcs.Task.IsCompleted)
                 {
                     OnStatusChange(WorkerStatus.Closed);
                     tcs.TrySetException(new Exception($"process exited before starting server, log: {startupLogs.ToString()}"));
                 }
-
             };
             process.OutputDataReceived += onData;
             process.ErrorDataReceived += onError;
@@ -270,17 +264,11 @@ public class WWebJSWorker : IDisposable
             {
                 try { ProcessErrorDataReceived?.Invoke(this, e); } catch (System.Exception) { }
             };
-
-
             process.Exited += hndlExited;
-
             process.Start();
-
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
-
             await tcs.Task;
-
             return tcs.Task.Result;
         }
         catch (Exception err)
@@ -288,7 +276,6 @@ public class WWebJSWorker : IDisposable
             throw new Exception("cannot start process", err);
         }
     }
-
 
     bool isDisposed;
     public void Dispose()
@@ -313,7 +300,7 @@ public class WWebJSWorker : IDisposable
                     LogStr("worker disposing: exited");
                 }
                 process.Dispose();
-                process=null;
+                process = null;
             }
         }
         catch (Exception err)
@@ -321,11 +308,6 @@ public class WWebJSWorker : IDisposable
             LogStr($"disposing threw: {err.ToString()}");
         }
         isDisposed = true;
-
-
-
-
-
     }
     public void Close()
     {
@@ -334,7 +316,6 @@ public class WWebJSWorker : IDisposable
     public WorkerStatus Status { get; set; }
     public static object hello()
     {
-
         return "v1";
     }
 }

@@ -15,12 +15,14 @@ public struct WWebJSWorkerStartInfo
         this.PackagedExecutablePath= packagedExe;
         this.NodeAppDirectory=null;
         this.NodeExecutablePath=null;
+        CreateNoWindow = true;
     }
      public WWebJSWorkerStartInfo(string nodeExe, string nodePackageDir)
     {
         this.PackagedExecutablePath= null;
         this.NodeAppDirectory=nodePackageDir;
         this.NodeExecutablePath=nodeExe;
+        CreateNoWindow = true;
     }
     ///<summary>
     /// the node.exe path <inheritdoc case we don't use a packaged executable
@@ -35,6 +37,7 @@ public struct WWebJSWorkerStartInfo
     /// NOTE: this folder is used in case we're using node.exe, and it must contain all the source files as well as the node_module dependencies tree
     ///</summary>
     public string? NodeAppDirectory { get; set; }
+    public bool CreateNoWindow { get; set; }
 
     public void ValidateCanStartWithPackagedExecutable ()
     {
