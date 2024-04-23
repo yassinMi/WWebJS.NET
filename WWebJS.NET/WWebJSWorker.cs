@@ -3,6 +3,7 @@ using System.Net.Http;
 using WWebJsService;
 using System.Diagnostics;
 using System.Text;
+using System.IO.Pipes;
 
 namespace WWebJS.NET;
 
@@ -39,23 +40,29 @@ public class WWebJSWorker : IDisposable
         NamedPipeName = Guid.NewGuid().ToString();
         this.WorkerStartInfo = workerStartInfo;
     }
-    ///<summary>
-    /// the index.js entry file relative to the <see cref="WorkerStartInfo.NodeAppDirectory"/> , e.g "dist/index.js"
-    ///</summary>
-    public static string RelativeEntryPointFile { get; set; } = "dist/index.js";
+    public WWebJSWorker(WWebJSWorkerStartInfo workerStartInfo, string serverName)
+    {
+        if (string.IsNullOrWhiteSpace(serverName))
+            throw new ArgumentException("server name cannot be null or empty");
+        NamedPipeName = serverName;
+        this.WorkerStartInfo = workerStartInfo;
+        IsGlobal = true;
+    }
+
     public Action<string> Log { get; set; } = DefaultLog;
     public Exception? Error { get; private set; }
     string NamedPipeName { get; set; }
     public WWebJSWorkerStartInfo WorkerStartInfo { get; }
-        public event EventHandler? StatusChanged;
+    public event EventHandler? StatusChanged;
+    public static int GlobalWorkerConnectionTimeout {get;set;} = 2000;
 
-    
+
 
     public event DataReceivedEventHandler? ProcessOutputDataReceived;
     public event DataReceivedEventHandler? ProcessErrorDataReceived;
 
     private WWebJsService.WWebJsService.WWebJsServiceClient? _Client;
-    public WWebJsService.WWebJsService.WWebJsServiceClient? Client
+    public WWebJsService.WWebJsService.WWebJsServiceClient? Proxy
     {
         get
         {
@@ -65,6 +72,11 @@ public class WWebJSWorker : IDisposable
         private set { _Client = value; }
     }
 
+    public bool IsGlobal { get; private set; }
+    ///<summary>
+    /// gets a value indicating whether this instance created new global server instance (only applicable for Global mode and after a successful Start)
+    ///</summary>
+    public bool IsCreator { get; private set; }
     Process? process;
 
     Task? startingTask;
@@ -95,7 +107,7 @@ public class WWebJSWorker : IDisposable
     {
         if (isDisposed) throw new InvalidOperationException("worker instance disposed");
     }
-    
+
     private async Task Start_impl()
     {
         try
@@ -103,55 +115,63 @@ public class WWebJSWorker : IDisposable
             bool isPackagedMode = false;
             try
             {
-                this.WorkerStartInfo.ValidateCanStartWithPackagedExecutable();
+                this.WorkerStartInfo.ValidateCanStartWithPackagedExecutable(false);
                 isPackagedMode = true;
             }
             catch (System.Exception)
             {
-                this.WorkerStartInfo.ValidateCanStartWithNode();
+                this.WorkerStartInfo.ValidateCanStartWithNode(false);
+            }
+            if (IsGlobal)
+            {
+                //detecting existing server
+                OnStatusChange(WorkerStatus.Connecting);
+                var chOpt_ = new GrpcDotNetNamedPipes.NamedPipeChannelOptions() { ConnectionTimeout = GlobalWorkerConnectionTimeout };
+                var ch_ = new GrpcDotNetNamedPipes.NamedPipeChannel(".", NamedPipeName,chOpt_);
+                var proxy = new WWebJsService.WWebJsService.WWebJsServiceClient(ch_);
+                if (await TryGetPingResponse(proxy) == true)
+                {
+                    Proxy = proxy;
+                    IsCreator = false;
+                    OnStatusChange(WorkerStatus.Connected);
+                    return;
+                }
+                IsCreator = true;
             }
             if (isPackagedMode)
             {
-                if (!File.Exists(WorkerStartInfo.PackagedExecutablePath)) throw new Exception($"packaged executable not found: '{WorkerStartInfo.PackagedExecutablePath}'");
-                var workerArgs = new string[] { NamedPipeName };
-                LogStr($"attempting to run '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
+                this.WorkerStartInfo.ValidateCanStartWithPackagedExecutable(true);
+                var workerArgs = new string[] { NamedPipeName, IsGlobal ? "" : "--monitor" };
+                LogStr($"running '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
                 OnStatusChange(WorkerStatus.Connecting);
-                var processStarted = await StartWorkerWithArgs(WorkerStartInfo.PackagedExecutablePath, workerArgs);
+                var processStarted = await StartWorkerWithArgs(WorkerStartInfo.PackagedExecutablePath!, workerArgs);
                 if (!processStarted) throw new Exception("cannot start process");
             }
             else
             {
                 //running node.exe 
-                if (!File.Exists(WorkerStartInfo.NodeExecutablePath)) throw new Exception($"node.exe not found: '{WorkerStartInfo.NodeExecutablePath}'");
-                if (!Path.GetFileName(WorkerStartInfo.NodeExecutablePath).Equals("node.exe", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new Exception($"invalid node path: '{WorkerStartInfo.NodeExecutablePath}'");
-                }
-                if (!Directory.Exists(WorkerStartInfo.NodeAppDirectory))
-                {
-                    throw new Exception($"wds app directory not found or is not valid at : '{WorkerStartInfo.NodeAppDirectory}'");
-                }
-                if (!Directory.Exists(Path.Combine(WorkerStartInfo.NodeAppDirectory, "node_modules")))
-                {
-                    throw new Exception($"wds app directory not found or is not valid at : '{WorkerStartInfo.NodeAppDirectory}'");
-                }
-                var indexJsPath = Path.Combine(WorkerStartInfo.NodeAppDirectory, RelativeEntryPointFile);
-                if (!File.Exists(indexJsPath))
-                {
-                    throw new Exception($"{RelativeEntryPointFile} expected in app directory : '{WorkerStartInfo.NodeAppDirectory}'");
-                }
+                var indexJsPath = Path.Combine(WorkerStartInfo.NodeAppDirectory!, WWebJSWorkerStartInfo.RelativeEntryPointFile);
                 //todo: validate package.json version to ensure compatibility
-
-                var workerArgs = new string[] { indexJsPath, NamedPipeName };
-                LogStr($"attempting to run '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
+                var workerArgs = new string[] { indexJsPath, NamedPipeName, IsGlobal ? "" : "--monitor" };
+                LogStr($"running '{WorkerStartInfo.PackagedExecutablePath}' with args [{string.Join(",", workerArgs)}]...");
                 OnStatusChange(WorkerStatus.Connecting);
-                var processStarted = await StartWorkerWithArgs(WorkerStartInfo.NodeExecutablePath, workerArgs);
+                var processStarted = await StartWorkerWithArgs(WorkerStartInfo.NodeExecutablePath!, workerArgs);
                 if (!processStarted) throw new Exception("cannot start process");
             }
             var channel = new GrpcDotNetNamedPipes.NamedPipeChannel(".", NamedPipeName);
-            Client = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
-            LogStr($"attempting to get ping resp...");
-            if (await TryGetPingResponse()) { OnStatusChange(WorkerStatus.Connected); }
+            Proxy = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
+            LogStr($"ping...");
+            if (await TryGetPingResponse(_Client))
+            {
+                OnStatusChange(WorkerStatus.Connected);
+                if (!IsGlobal)
+                {
+                    heartBeatThread = new Thread(heartBeatFn);
+                    heartBeatThread.IsBackground=true;
+                    heartbeatCts = new CancellationTokenSource();
+                    heartBeatThread.Start();
+                }
+            }
             else throw new Exception("cannot start process, ping err");
 
             process!.Exited += hndlProcessExited;
@@ -165,15 +185,49 @@ public class WWebJSWorker : IDisposable
 
     }
 
+
+    CancellationTokenSource? heartbeatCts;
+    static public int HeartbeatIntervalMs { get; set; } = 1000;
+    private void heartBeatFn(object? obj)
+    {
+        try
+        {
+            NamedPipeClientStream client = new NamedPipeClientStream(this.NamedPipeName+"-mi6d693136");
+            client.Connect(5000);
+            while (true)
+            {
+
+                heartbeatCts!.Token.ThrowIfCancellationRequested();
+                client.WriteByte((byte)'1');
+                client.Flush();
+                Task.Delay(HeartbeatIntervalMs, heartbeatCts!.Token).GetAwaiter().GetResult();
+            }
+        }
+        catch (System.Exception err)
+        {
+            heartBeatThread = null;
+            LogStr(err.ToString());
+        }
+
+    }
+
     private void hndlProcessExited(object? sender, EventArgs e)
     {
         LogStr($"worker_ process existed with code ${process!.ExitCode} , exit time: {process.ExitTime}");
         OnStatusChange(WorkerStatus.Closed);
     }
 
-    async Task<bool> TryGetPingResponse()
+    async Task<bool> TryGetPingResponse(WWebJsService.WWebJsService.WWebJsServiceClient proxy)
     {
-        return await Task.FromResult(true);
+        if (proxy == null) throw new InvalidOperationException("Proxy null");
+        try
+        {
+            return (await proxy.PingAsync(new PingRequest() { Text = "hello" })).Text == "hello";
+        }
+        catch (System.Exception)
+        {
+            return false;
+        }
     }
 
     void SetError(Exception err)
@@ -192,7 +246,7 @@ public class WWebJSWorker : IDisposable
         });
     }
 
-    
+
 
     ///<summary>
     /// runs the specified <paramref name="program"/> (either node or the packaged exe, and passes the <paramref name="args"/>)
@@ -278,12 +332,34 @@ public class WWebJSWorker : IDisposable
     }
 
     bool isDisposed;
+    private Thread? heartBeatThread;
+
     public void Dispose()
     {
         if (isDisposed) return;
         try
         {
-            LogStr("worker disposing");
+            if (IsGlobal) return;
+            Close();
+        }
+        catch (Exception err)
+        {
+            LogStr($"disposing threw: {err.ToString()}");
+        }
+        isDisposed = true;
+    }
+
+    public void Close()
+    {
+        LogStr("closing worker");
+        if (IsGlobal && !IsCreator)
+        {
+            //# sending exist signal over the channel
+            if (_Client == null) throw new InvalidOperationException("Proxy null, make sure start is called successfully before closing");
+            _Client.Exit(new ExitRequest() { Force = true });
+        }
+        else
+        {
             //Client.Dispose();
             if (process != null && !process.HasExited)
             {
@@ -299,19 +375,12 @@ public class WWebJSWorker : IDisposable
                 {
                     LogStr("worker disposing: exited");
                 }
+                heartbeatCts?.Cancel();
                 process.Dispose();
                 process = null;
             }
         }
-        catch (Exception err)
-        {
-            LogStr($"disposing threw: {err.ToString()}");
-        }
-        isDisposed = true;
-    }
-    public void Close()
-    {
-        Dispose();
+
     }
     public WorkerStatus Status { get; set; }
     public static object hello()

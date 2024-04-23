@@ -31,11 +31,9 @@ namespace WWebJS.NET.WpfDemo
             InitializeComponent();
 
             LogInfo("demo app started");
-
-         
         }
-        static WWebJSWorkerStartInfo wsi = new WWebJSWorkerStartInfo(("x64/node.exe"), @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\");
-
+        static WWebJSWorkerStartInfo wsi = new WWebJSWorkerStartInfo(("x64/node.exe"), @"E:\TOOLS\WWebJS.NET\WWebJS.NET\wwebjs-dotnet-server\") { CreateNoWindow = false };
+        
         WWebJSWorker currentWorker;
 
         public WWebJSWorker CurrentLastingWorker { get; private set; }
@@ -67,7 +65,6 @@ namespace WWebJS.NET.WpfDemo
         private void LogError(string str)
         {
             Debug.WriteLine(str);
-
             App.Current.Dispatcher.BeginInvoke(new Action(() =>
             {
                 bool shouldScroll = logsRtb.VerticalOffset >= (logsRtb.ExtentHeight - logsRtb.ViewportHeight);
@@ -117,7 +114,7 @@ namespace WWebJS.NET.WpfDemo
                     if (CurrentLastingWorker.Status != WorkerStatus.Connected) throw new InvalidUserOperation("current worker not connected");
                     if (CurrentInitializedClientHandle == null) throw new InvalidUserOperation("create a client first");
 
-                    var res = await CurrentLastingWorker.Client.SendMessageAsync(new SendMessageRequest()
+                    var res = await CurrentLastingWorker.Proxy.SendMessageAsync(new SendMessageRequest()
                     {
                         ChatId = num,
                         ClientHandle = CurrentInitializedClientHandle,
@@ -167,7 +164,7 @@ namespace WWebJS.NET.WpfDemo
                 {
                     //hello test using grpc directly
                     LogInfo("running test with existing worker instance (TEST pipe name]");
-                    LogInfo($"getting result");
+                    LogInfo($"getting  result");
                     var channel = new GrpcDotNetNamedPipes.NamedPipeChannel(".", "TEST");
                     var Client = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
                     var contact = new Contact() { Number = "yass phone" };
@@ -191,7 +188,7 @@ namespace WWebJS.NET.WpfDemo
                         var contact = new Contact() { Number = "yass phone" };
                         var req = new DevGetLastMessageRequest() { Contact = contact };
 
-                        var res = await worker.Client.DevGetLastMessageAsync(req);
+                        var res = await worker.Proxy.DevGetLastMessageAsync(req);
                         LogInfo($"recieved response: {res.Message.Body}");
                         await Task.Delay(1000);
                     }
@@ -235,18 +232,18 @@ namespace WWebJS.NET.WpfDemo
                 if (!Regex.IsMatch(clientHandle, "[a-zA-Z0-9]+")) throw new InvalidUserOperation("invalid client name");
 
 
-                    CurrentLastingWorker = new WWebJSWorker(wsi);
+                    CurrentLastingWorker = new WWebJSWorker(wsi,"lasting");
                 trackWorker(CurrentLastingWorker);
                 await CurrentLastingWorker.Start();
                 //# set options
-                await CurrentLastingWorker.Client.SetOptionsAsync(new WWebJSServiceOptions()
+                await CurrentLastingWorker.Proxy.SetOptionsAsync(new WWebJSServiceOptions()
                 {
                     ChromeExecutablePath = TestChromePath,
                     HeadlessChromeMode = false,
                     UserDataDir = TestDataRoot,
                     Verbose=true,
                 });
-                var stream = CurrentLastingWorker.Client.InitClient(new InitClientRequest()
+                var stream = CurrentLastingWorker.Proxy.InitClient(new InitClientRequest()
                 {
                     ClientCreationOptions = new ClientCreationOptions
                     {

@@ -9,7 +9,10 @@ public struct WWebJSWorkerStartInfo
     }
     public static WWebJSWorkerStartInfo LocalEnvSpecificPackaged = new WWebJSWorkerStartInfo(GetEnvSpecificRuntimeBinaryPath("wwebjs-dotnet-server.exe"));
     public static WWebJSWorkerStartInfo LocalEnvSpecificNode = new WWebJSWorkerStartInfo(GetEnvSpecificRuntimeBinaryPath("node.exe"),"wwebjs-dotnet-server/");
-    
+    ///<summary>
+    /// the index.js entry file relative to the <see cref="WorkerStartInfo.NodeAppDirectory"/> , e.g "dist/index.js"
+    ///</summary>
+    public static string RelativeEntryPointFile { get; set; } = "dist/index.js";
     public WWebJSWorkerStartInfo(string packagedExe)
     {
         this.PackagedExecutablePath= packagedExe;
@@ -39,7 +42,7 @@ public struct WWebJSWorkerStartInfo
     public string? NodeAppDirectory { get; set; }
     public bool CreateNoWindow { get; set; }
 
-    public void ValidateCanStartWithPackagedExecutable ()
+    public void ValidateCanStartWithPackagedExecutable (bool checkFiles)
     {
         if (!string.IsNullOrWhiteSpace(PackagedExecutablePath))
         {
@@ -49,12 +52,37 @@ public struct WWebJSWorkerStartInfo
         {
             throw new Exception("NodeAppDirectory must be provided");
         }
+        if(checkFiles)
+        {
+            if (!File.Exists(this.NodeExecutablePath)) throw new Exception($"node.exe not found: '{this.NodeExecutablePath}'");
+                if (!Path.GetFileName(this.NodeExecutablePath).Equals("node.exe", StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new Exception($"invalid node path: '{this.NodeExecutablePath}'");
+                }
+                if (!Directory.Exists(this.NodeAppDirectory))
+                {
+                    throw new Exception($"wds app directory not found or is not valid at : '{this.NodeAppDirectory}'");
+                }
+                if (!Directory.Exists(Path.Combine(this.NodeAppDirectory, "node_modules")))
+                {
+                    throw new Exception($"wds app directory not found or is not valid at : '{this.NodeAppDirectory}'");
+                }
+                var indexJsPath = Path.Combine(this.NodeAppDirectory, RelativeEntryPointFile);
+                if (!File.Exists(indexJsPath))
+                {
+                    throw new Exception($"{this} expected in app directory : '{this.NodeAppDirectory}'");
+                }
+        }
     }
-    public void ValidateCanStartWithNode()
+    public void ValidateCanStartWithNode(bool checkFiles)
     {
         if (!string.IsNullOrWhiteSpace(PackagedExecutablePath))
         {
             throw new Exception("PackagedExecutablePath must be provided");
+        }
+        if(checkFiles)
+        {
+            if (!File.Exists(this.PackagedExecutablePath)) throw new Exception($"packaged executable not found: '{this.PackagedExecutablePath}'");
         }
     }
 }

@@ -4,7 +4,7 @@ import internal from "stream";
 import { mapEventEnumToString, mapStringToEventEnum } from "./grpcTypesHelper";
 import * as messaged from "./generated/WWebJS_pb"
 import path from "path"
-import {  ClientEventType, DevGetLastMessageRequest, DevGetLastMessageResponse, DevGetMessagesRequest, DevGetMessagesResponse, InitClientRequest, InitClientResponse, SendMessageRequest, SendMessageResponse, WWebJSServiceOptions, WWebJsServiceServer } from "./generated/WWebJS";
+import {  ClientEventType, DevGetLastMessageRequest, DevGetLastMessageResponse, DevGetMessagesRequest, DevGetMessagesResponse, ExitRequest, ExiResponse, InitClientRequest, InitClientResponse, PingRequest, PingResponse, SendMessageRequest, SendMessageResponse, WWebJSServiceOptions, WWebJsServiceServer } from "./generated/WWebJS";
 import { Empty } from "./generated/google/protobuf/empty";
 import {Message as MessageProto,  MessageContent } from "./generated/Message";
 import { handleServerStreamingCall, handleUnaryCall , status, ServiceError} from "@grpc/grpc-js";
@@ -28,7 +28,15 @@ export class WWebJSServiceImpl  {
      public clients: Map<string,Client>
     
      public options: WWebJSServiceOptions;
-    
+     ping: handleUnaryCall<PingRequest, PingResponse> =(call,callback)=>{
+        console.log("called ping with args ", call.request)
+        callback(null, {text:call.request.text})
+    }
+    exit: handleUnaryCall<ExitRequest, ExitRequest> =(call,callback)=>{
+        console.log("called exit with args ", call.request)
+        callback(null, {force:true})
+        process.exit(0);
+    }
     devGetMessages: handleUnaryCall<DevGetMessagesRequest, DevGetMessagesResponse> =(call,callback)=>{
         console.log("called devGetMessages with arg ", call.request)
         

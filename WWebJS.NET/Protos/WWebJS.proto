@@ -7,11 +7,25 @@ import "Contact.proto";
 import "google/protobuf/empty.proto";
 
 service WWebJsService {
+    rpc Ping(PingRequest) returns(PingResponse){}
+    rpc Exit(ExitRequest) returns(ExiResponse){}
     rpc DevGetMessages(DevGetMessagesRequest) returns(DevGetMessagesResponse){}
     rpc DevGetLastMessage(DevGetLastMessageRequest) returns(DevGetLastMessageResponse){}
     rpc InitClient(InitClientRequest) returns(stream InitClientResponse){}
     rpc SendMessage(SendMessageRequest) returns(SendMessageResponse){}
     rpc SetOptions(WWebJSServiceOptions) returns(WWebJSServiceOptions){}
+}
+message ExitRequest{
+    bool force=1;
+}
+message ExiResponse{
+    bool result=1;//never
+}
+message PingRequest{
+    string text = 1;
+}
+message PingResponse{
+    string text = 1;
 }
 message DevGetMessagesRequest{
     DevContact contact =1;
