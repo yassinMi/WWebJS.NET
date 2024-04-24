@@ -1,7 +1,7 @@
 {
   "name": "wwebjs-dotnet-server",
-  "version": "1.0.0",
-  "description": "The js backend of WWebJS.NET which is a .NET wrapper for WWebJs",
+  "version": "0.1.0",
+  "description": "The js backend of WWebJS.NET which is a .NET wrapper for whatsapp-web.js",
   "main": "dist/index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -14,6 +14,7 @@
   },
   "keywords": [
     "WWebJs",
+    "whatsapp-bot",
     ".NET",
     "dotnet",
     "NetFramework"
@@ -30,7 +31,11 @@
     "rxjs": "^7.8.1",
     "whatsapp-web.js": "^1.23.0"
   },
-  "bin": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yassinMi/WWebJS.NET.git"
+  },
+  "bin": {"wwebjs-dotnet-server":"./dist/index.js"},
   "pkg": {
     "targets": [
       "node19-win-x64"
@@ -42,5 +47,7 @@
   "devDependencies": {
     "@types/google-protobuf": "^3.15.12",
     "ts-proto": "^1.172.0"
-  }
+  },
+  "files": ["dist","src"]
+
 }

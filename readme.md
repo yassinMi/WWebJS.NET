@@ -2,11 +2,24 @@
 # WWebJS.NET
 
 A thin wrapper around [whatsapp-web.js](https://wwebjs.dev/) that uses Protocol Buffers RPC over named pipes. It aims to expose a similar API using C#.
+## Prerequisites
+You'll need to install the node package ```wwebjs-dotnet-server``` which includes ```whatsapp-web.js``` and the required dependencies
 
-## Example
+### Install using npm:
+```bat
+cd C:\MyAppModules\
+mkdir wds
+cd wds
+set PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+npm init -y
+npm install wwebjs-dotnet-server
+```
+
+## Usage
 ```c#
+//assuming you have installed wwebjs-dotnet-server at the specified location
 //start the node server
-var workerStartInfo = new WWebJSWorkerStartInfo(("x64/node.exe"), @"/wwebjs-dotnet-server/");
+var workerStartInfo = new WWebJSWorkerStartInfo(("x64/node.exe"), @"C:/MyAppModules/wds/node_modules/wwebjs-dotnet-server/");
 var worker = new WWebJSWorker(workerStartInfo));
 await worker.Start(); 
 

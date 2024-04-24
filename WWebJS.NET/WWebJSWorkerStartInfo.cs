@@ -74,10 +74,11 @@ public struct WWebJSWorkerStartInfo
             {
                 throw new Exception($"wds app directory not found or is not valid at : '{this.NodeAppDirectory}'");
             }
-            if (!Directory.Exists(Path.Combine(this.NodeAppDirectory, "node_modules")))
+            //disabled check to allow for experimenting the "npm intall wwebjs-dotnet-server" && "npx wwebjs-dotnet-server" flow
+            /*if (!Directory.Exists(Path.Combine(this.NodeAppDirectory, "node_modules")))
             {
                 throw new Exception($"wds app directory not found or is not valid at : '{this.NodeAppDirectory}'");
-            }
+            }*/
             var indexJsPath = Path.Combine(this.NodeAppDirectory, RelativeEntryPointFile);
             if (!File.Exists(indexJsPath))
             {
