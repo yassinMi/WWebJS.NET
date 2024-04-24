@@ -11,6 +11,8 @@
     <Authors>yassinMi</Authors>
     <Company></Company>
     <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/yassinMi/WWebJS.NET</RepositoryUrl> 
+    <RepositoryType>git</RepositoryType> 
   </PropertyGroup>
 
   <ItemGroup>
