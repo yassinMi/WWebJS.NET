@@ -379,6 +379,7 @@ public class WWebJSWorker : IDisposable
             //Client.Dispose();
             if (process != null && !process.HasExited)
             {
+                process.Exited-= hndlProcessExited;
                 LogStr("worker disposing: close worker");
                 process.StandardInput.Write("q");//close gracefully;
                 var exited = process.WaitForExit(1000);
@@ -391,6 +392,7 @@ public class WWebJSWorker : IDisposable
                 {
                     LogStr("worker disposing: exited");
                 }
+                OnStatusChange(WorkerStatus.Closed);
                 heartbeatCts?.Cancel();
                 process.Dispose();
                 process = null;
