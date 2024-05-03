@@ -69,15 +69,15 @@ public class WWebJSWorker : IDisposable
     public event DataReceivedEventHandler? ProcessOutputDataReceived;
     public event DataReceivedEventHandler? ProcessErrorDataReceived;
 
-    private WWebJsService.WWebJsService.WWebJsServiceClient? _Client;
+    private WWebJsService.WWebJsService.WWebJsServiceClient? _Proxy;
     public WWebJsService.WWebJsService.WWebJsServiceClient? Proxy
     {
         get
         {
             if (Status != WorkerStatus.Connected) throw new InvalidOperationException($"Cannot use the worker instance, status='{Status}'");
-            return _Client;
+            return _Proxy;
         }
-        private set { _Client = value; }
+        private set { _Proxy = value; }
     }
 
     public bool IsGlobal { get; private set; }
@@ -170,7 +170,7 @@ public class WWebJSWorker : IDisposable
             var channel = new GrpcDotNetNamedPipes.NamedPipeChannel(".", NamedPipeName);
             Proxy = new WWebJsService.WWebJsService.WWebJsServiceClient(channel);
             LogStr($"ping...");
-            if (await TryGetPingResponse(_Client))
+            if (await TryGetPingResponse(_Proxy!))
             {
                 OnStatusChange(WorkerStatus.Connected);
                 if (!IsGlobal)
@@ -371,8 +371,8 @@ public class WWebJSWorker : IDisposable
         if (IsGlobal && !IsCreator)
         {
             //# sending exist signal over the channel
-            if (_Client == null) throw new InvalidOperationException("Proxy null, make sure start is called successfully before closing");
-            _Client.Exit(new ExitRequest() { Force = true });
+            if (_Proxy == null) throw new InvalidOperationException("Proxy null, make sure start is called successfully before closing");
+            _Proxy.Exit(new ExitRequest() { Force = true });
         }
         else
         {

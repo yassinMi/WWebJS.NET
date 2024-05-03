@@ -15,6 +15,22 @@ npm init -y
 npm install wwebjs-dotnet-server
 ```
 
+or install at runtime using the `WWebJSHelper` class, which does the same:
+
+```c#
+//specify where you want the node dependencies installed:
+WWebJSHelper.WdsParentProjectDirectory = @"C:\MyAppModules\wds";
+//provide the full path to npm 
+WWebJSHelper.NpmPath = @"C:\MyAppModules\npm.cmd"; 
+//first install:
+await WWebJSHelper.Install(true);
+//checking for updates is supported:
+string latestVersion = await WWebJSHelper.CheckUpdate();
+if(latestVersion != WWebJSHelper.InstalledVersion)
+{
+    await WWebJSHelper.InstallUpdate(latestVersion);
+}
+```
 ## Usage
 ```c#
 //assuming you have installed wwebjs-dotnet-server at the specified location
