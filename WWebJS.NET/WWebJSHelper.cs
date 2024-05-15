@@ -65,7 +65,8 @@ public static class WWebJSHelper
                     if (!File.Exists(parentProjectPackageJson)) throw new Exception("install failed, package.json not created");
                     //just another assetion
                     var parsed = ReadFirstJsonInString(npmInitRes.Trim());
-
+                    //creating .npmrc, needed to ensure scripts worth when node is not in the PATH
+                    File.WriteAllText(Path.Combine(WdsParentProjectDirectory_,".npmrc"), "scripts-prepend-node-path=true");
                     //altering the parent package.json to include wwebjs-dotnet-server as a dependency (wihout install)
                     var packageJson = JObject.Parse(File.ReadAllText(parentProjectPackageJson));
                     packageJson["dependencies"] = new JObject { { PackageName, PackageInitialVersion } };
