@@ -114,7 +114,7 @@ export class WWebJSServiceImpl  {
                 caption:optionsProto?.caption,
                 media:optionsProto?.media,
             }  
-            var formattedChatId = req.chatId.replace(/[\+- )(]/g,"");
+            var formattedChatId = req.chatId.replace(/[+\- )(]/g,"");
             if(!formattedChatId.endsWith("@c.us")) formattedChatId = formattedChatId+"@c.us";
             var isRegistered = await client.isRegisteredUser(formattedChatId)
             if(!isRegistered) {
