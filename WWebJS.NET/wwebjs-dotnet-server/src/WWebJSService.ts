@@ -92,7 +92,7 @@ export class WWebJSServiceImpl  {
         
         
     }
-    sendMessage: handleUnaryCall<SendMessageRequest, SendMessageResponse>=(call,callback)=>{
+    sendMessage: handleUnaryCall<SendMessageRequest, SendMessageResponse>=async(call,callback)=>{
         console.log("called sendMessage with arg ", call.request)
 
         try {
@@ -114,22 +114,29 @@ export class WWebJSServiceImpl  {
                 caption:optionsProto?.caption,
                 media:optionsProto?.media,
             }  
-            client.sendMessage(req.chatId,content.text,sendOptions)
-            .then(msg=> {
-                res.message= MessageProto.fromPartial({
-                    ack:msg.ack,
-                    body:msg.body,
-                    author:msg.author,
-                    from:msg.from,
-                    id:{fromMe:msg.id.fromMe,id:msg.id.id,remote:msg.id.remote,serialized:msg.id._serialized},
-                    to:msg.to
-                })
-                
-                callback(null,res);
-            })
-            .catch(err=>{
-                callback(err,null)
-            })
+            var formattedChatId = req.chatId.replace(/[\+- )(]/g,"");
+            if(!formattedChatId.endsWith("@c.us")) formattedChatId = formattedChatId+"@c.us";
+            var isRegistered = await client.isRegisteredUser(formattedChatId)
+            if(!isRegistered) {
+                callback({
+                    code: status.FAILED_PRECONDITION,//
+                    details: `phone number ${formattedChatId} is not registered in whatsapp`,
+                    message : `phone number ${formattedChatId} is not registered in whatsapp`,
+                    name:""
+                },null)
+                return;
+            }
+            var msg = await client.sendMessage(formattedChatId, content.text, sendOptions);
+                var partialMsg = {
+                    ack: msg.ack,
+                    body: msg.body,
+                    author: msg.author?.toString()||"",
+                    from: msg.from?.toString(),
+                    //id: { fromMe: msg.id.fromMe, id: msg.id.id, remote: msg.id.remote, serialized: msg.id._serialized },
+                    to: msg.to?.toString()
+                }
+                res.message = MessageProto.fromPartial(partialMsg); 
+                callback(null,res);   
         } catch (err :any ) {
             callback({
                 code: status.UNKNOWN,
