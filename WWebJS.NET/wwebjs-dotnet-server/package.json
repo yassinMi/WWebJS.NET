@@ -1,6 +1,6 @@
 {
   "name": "wwebjs-dotnet-server",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "The js backend of WWebJS.NET which is a .NET wrapper for whatsapp-web.js",
   "main": "dist/index.js",
   "scripts": {
