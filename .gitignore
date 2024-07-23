@@ -2,3 +2,5 @@
 *.yasscmd
 *.yass/
 WWebJS.NET.Framework
+/WWebJS.NET/.vs/WWebJS.NET/FileContentIndex
+.vs

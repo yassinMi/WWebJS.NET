@@ -1,13 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net6.0;net462</TargetFrameworks>
+    <TargetFrameworks>net8.0;net462</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>10.0</LangVersion>
-    <Version>0.1.8</Version>
+    <Version>0.1.9</Version>
     <PackageDescription>A simple .NET wrapper for the whatsapp-web.js library. This runs a packaged Node.js server and doesn't require a Node.js installation</PackageDescription>
-    <AssemblyVersion>0.1.8.0</AssemblyVersion>
+    <AssemblyVersion>0.1.9.0</AssemblyVersion>
     <Authors>yassinMi</Authors>
     <Company></Company>
     <PackageReadmeFile>readme.md</PackageReadmeFile>

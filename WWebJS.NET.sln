@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.34928.147
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WWebJS.NET", "WWebJS.NET\WWebJS.NET.csproj", "{A2C63280-894B-4108-8BC3-C8AF63669ACF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WWebJS.NET.Test", "WWebJS.NET.Test\WWebJS.NET.Test.csproj", "{F78AF370-4D5D-4601-AB82-76B0CFEC6282}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2C63280-894B-4108-8BC3-C8AF63669ACF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2C63280-894B-4108-8BC3-C8AF63669ACF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2C63280-894B-4108-8BC3-C8AF63669ACF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2C63280-894B-4108-8BC3-C8AF63669ACF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F78AF370-4D5D-4601-AB82-76B0CFEC6282}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F78AF370-4D5D-4601-AB82-76B0CFEC6282}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F78AF370-4D5D-4601-AB82-76B0CFEC6282}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F78AF370-4D5D-4601-AB82-76B0CFEC6282}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ACD2D36B-C862-4E8B-BB13-25F93303C1E8}
+	EndGlobalSection
+EndGlobal

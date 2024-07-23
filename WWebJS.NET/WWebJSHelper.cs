@@ -45,7 +45,7 @@ public static class WWebJSHelper
         try
         {
             var WdsParentProjectDirectory_ = WdsParentProjectDirectory;//capturing value in case it changed during install
-            if (string.IsNullOrWhiteSpace(WdsParentProjectDirectory_)) throw new InvalidOperationException($"value unset, make sure the static property {nameof(WWebJSHelper)}.{nameof(WdsParentProjectDirectory)} is set properly");
+            if (WdsParentProjectDirectory_==null||string.IsNullOrWhiteSpace(WdsParentProjectDirectory_)) throw new InvalidOperationException($"value unset, make sure the static property {nameof(WWebJSHelper)}.{nameof(WdsParentProjectDirectory)} is set properly");
             if (!UseGlobalNpm && string.IsNullOrWhiteSpace(NpmPath)) throw new InvalidOperationException($"value unset, make sure the static property {nameof(WWebJSHelper)}.{nameof(NpmPath)} is set properly");
             if (!UseGlobalNpm && !File.Exists(NpmPath)) throw new Exception($"cannot find npm path'{NpmPath}', please make sure the static property {nameof(WWebJSHelper)}.{nameof(NpmPath)} is set properly");
             string parentProjectPackageJson = Path.Combine(WdsParentProjectDirectory_, "package.json");
@@ -64,7 +64,7 @@ public static class WWebJSHelper
                     //assert package.json is created
                     if (!File.Exists(parentProjectPackageJson)) throw new Exception("install failed, package.json not created");
                     //just another assetion
-                    var parsed = ReadFirstJsonInString(npmInitRes.Trim());
+                    var parsed = ReadFirstJsonInString(npmInitRes.Trim(),jobj=>true);
                     //creating .npmrc, needed to ensure scripts worth when node is not in the PATH
                     File.WriteAllText(Path.Combine(WdsParentProjectDirectory_,".npmrc"), "scripts-prepend-node-path=true");
                     //altering the parent package.json to include wwebjs-dotnet-server as a dependency (wihout install)
@@ -85,8 +85,9 @@ public static class WWebJSHelper
                .GetOutputString().ConfigureAwait(false);
             ;
 
-            var obj = ReadFirstJsonInString(res);
+            var obj = ReadFirstJsonInString(res,jobj=>jobj.ContainsKey("added"));
             JArray addedCollection = (JArray)obj["added"]!;
+            Debug.Assert(addedCollection != null, $"added is null: {obj.ToString(Newtonsoft.Json.Formatting.Indented)}");
             bool existed = true;
             if (addedCollection.Any(t => (string)t["name"]! == PackageName)) existed = false;
             InvalidateInstalledVersion();
@@ -237,7 +238,7 @@ public static class WWebJSHelper
                 .WithEnvirenment("PUPPETEER_SKIP_CHROMIUM_DOWNLOAD", "true")
                 .GetOutputString().ConfigureAwait(false);
 
-            var obj = ReadFirstJsonInString(cmdDump);
+            var obj = ReadFirstJsonInString(cmdDump,j=>j.ContainsKey("updated"));
             var updatedElements = obj.SelectTokens("$.updated[*]");
             var updatedPkg = updatedElements.FirstOrDefault(t => (string)t["name"]! == PackageName && (string)t["action"]! == "update");
             if (updatedPkg == null)
@@ -256,17 +257,26 @@ public static class WWebJSHelper
         }
     }
 
-    static JObject ReadFirstJsonInString(string data)
+    static JObject ReadFirstJsonInString(string data, Func<JObject, bool> predicate)
     {
-        var indexOfJson = data.IndexOf('{');
-        if (indexOfJson < 0) throw new Exception("no json output");
-        using (var sr = new StringReader(data))
+        var subString = data;
+    searchNext:
+        var indexOfJson = subString.IndexOf('{');
+        if (indexOfJson < 0) throw new Exception($"no json output in {data}");
+        subString = subString.Substring(indexOfJson);
+        using (var sr = new StringReader(subString))
         {
-            using (var jtr = new Newtonsoft.Json.JsonTextReader(new StringReader(data.Substring(indexOfJson))))
+            using (var jtr = new Newtonsoft.Json.JsonTextReader(sr))
             {
                 var obj = JObject.ReadFrom(jtr);
                 if (obj == null) throw new Exception("cannot read output json");
-                return (JObject)obj;
+                if (predicate((JObject)obj))
+                    return (JObject)obj;
+                else
+                {
+                    subString = subString.Substring(Math.Min(subString.Length, 1));
+                    goto searchNext;
+                }
             }
         }
     }
